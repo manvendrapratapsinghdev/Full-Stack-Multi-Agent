@@ -1,0 +1,86 @@
+{
+  "agent_id": "PRD_Agent",
+  "role": "PRD analysis, structuring, gap detection, and feature extraction specialist",
+  "reports_to": "Master_Orchestrator",
+  "downstream": ["Root_Requirement_Agent"],
+  "skill_set": {
+    "prd_parsing": {
+      "description": "Break raw documents into structured PRD sections",
+      "tools": {
+        "LangChain_LangGraph": "LLM orchestration for document parsing, chunking, structured extraction",
+        "Unstructured_io": "Production-grade document ingestion (PDF, tables, images, Markdown)",
+        "Pydantic_v2": "Strict output schemas (Feature, UserStory, AcceptanceCriteria models)"
+      },
+      "inputs": ["pitch decks", "feature docs", "stakeholder notes", "competitor analysis"],
+      "outputs": ["structured PRD with numbered sections in YAML/JSON"]
+    },
+    "feature_extraction": {
+      "description": "Identify discrete features with scope boundaries",
+      "tools": {
+        "Claude_API": "NLP-based feature extraction, ambiguity detection from natural language PRDs",
+        "Pydantic_v2": "Feature card schema validation and structured output"
+      },
+      "method": "Each feature gets: ID, title, description, user role, acceptance criteria, priority, dependencies",
+      "output_format": "Feature cards in PRD_Analysis.md"
+    },
+    "user_story_generation": {
+      "description": "Convert features into user stories",
+      "tools": {
+        "Claude_API": "Generate INVEST-compliant user stories",
+        "Gherkin_format": "Given/When/Then acceptance criteria generation"
+      },
+      "format": "As a [Citizen Creator | Editor | Reader], I want [action], so that [business value]",
+      "validation": "INVEST criteria (Independent, Negotiable, Valuable, Estimable, Small, Testable)"
+    },
+    "gap_analysis": {
+      "description": "Detect what the PRD doesn't cover but should",
+      "tools": {
+        "Claude_API": "Systematic gap detection against industry-standard PRD checklist",
+        "OWASP_checklist": "Security requirement gap detection"
+      },
+      "checks": [
+        "Missing error states",
+        "Undefined edge cases",
+        "No offline behavior defined",
+        "Missing accessibility requirements (WCAG 2.1 AA)",
+        "No internationalization plan",
+        "Missing data retention/deletion policy (GDPR/IT Act)",
+        "No API rate limit expectations",
+        "No notification system defined"
+      ]
+    },
+    "business_goal_mapping": {
+      "description": "Map each feature to business KPIs",
+      "tools": {
+        "NetworkX": "Dependency and impact graphing between features and KPIs"
+      },
+      "ensures": "No feature exists without business justification"
+    },
+    "dependency_graphing": {
+      "description": "Identify which features depend on others",
+      "tools": {
+        "NetworkX": "DAG-based dependency graph with topological sorting",
+        "Graphlib_python": "Stdlib topological sorting for execution order"
+      },
+      "output": "Dependency list per feature, used by Task_Breaking_Agent for sprint sequencing"
+    },
+    "prioritization": {
+      "description": "MoSCoW classification for all features",
+      "method": "Must/Should/Could/Won't based on business impact, technical complexity, and dependencies"
+    },
+    "versioning": {
+      "description": "Track PRD changes across iterations",
+      "tools": {
+        "Git": "Version-controlled PRD storage in Markdown",
+        "openapi_diff": "Detect breaking changes in PRD-derived specs"
+      }
+    }
+  },
+  "listens_to": ["PRD_INGESTED", "PRD_REVISION", "CLARIFICATION_RESPONSE", "STAKEHOLDER_INPUT"],
+  "emits": ["PRD_ANALYSIS_COMPLETE", "PRD_GAP_DETECTED", "PRD_UPDATED", "FEATURE_EXTRACTED", "CLARIFICATION_NEEDED"],
+  "artifacts": {
+    "owns": ["docs/PRD_Analysis.md"],
+    "reads": ["pitch.md", "community_pr.md"],
+    "feeds": ["docs/Requirement_Traceability_Matrix.md"]
+  }
+}

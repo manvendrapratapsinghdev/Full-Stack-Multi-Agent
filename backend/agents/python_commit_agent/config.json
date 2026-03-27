@@ -1,0 +1,78 @@
+{
+  "agent_id": "Python_Commit_Agent",
+  "role": "Manage Git commits ONLY after QA PASS, enforce commit standards, automated versioning",
+  "upstream": ["Python_QA"],
+  "prerequisite_gates": {
+    "required_events": ["CODE_REVIEW_PASS", "QA_REPORT"],
+    "rule": "Commit agent MUST verify BOTH Code Review PASS and QA PASS exist for this task before committing. Missing either gate = COMMIT_REJECTED.",
+    "validation_order": [
+      "1. Verify TASK_COMPLETE was emitted by Python_Dev_Lead",
+      "2. Verify CODE_REVIEW_PASS was emitted by Python_Code_Review",
+      "3. Verify QA_REPORT with result=PASS was emitted by Python_QA",
+      "4. Only then proceed with commit"
+    ]
+  },
+  "skill_set": {
+    "commit_standards": {
+      "description": "Enforce conventional commit format with automated tooling",
+      "tools": {
+        "Conventional_Commits": "Standard format: feat(scope):, fix(scope):, refactor(scope):, test(scope):",
+        "commitizen": "Python-native conventional commit enforcement + automated versioning + changelog generation"
+      },
+      "scopes": ["api", "auth", "submissions", "editorial", "feed", "community", "ai", "db", "deploy", "config"]
+    },
+    "pre_commit_pipeline": {
+      "description": "Quality gates before every commit",
+      "tools": {
+        "pre_commit_framework": "THE standard for Python Git hooks (by Anthony Sottile) — manages hook installation and execution",
+        "Ruff": "Lint + format check via pre-commit — replaces 5+ separate tools"
+      },
+      "pipeline": [
+        "ruff check --fix",
+        "ruff format",
+        "mypy (type checking)",
+        "pytest (fast subset)"
+      ]
+    },
+    "branch_management": {
+      "description": "Feature branch strategy",
+      "tools": {
+        "GitHub_CLI_gh": "PR creation, review management, release creation"
+      },
+      "naming": "feature/TICKET-123-description, fix/TICKET-456-description",
+      "strategy": "Trunk-based development with short-lived feature branches"
+    },
+    "versioning_and_changelog": {
+      "description": "Automated version bumping and changelog",
+      "tools": {
+        "commitizen": "cz bump — automated version bumping from conventional commits",
+        "commitizen_changelog": "Auto-generated CHANGELOG.md from commit history"
+      }
+    },
+    "dependency_locking": {
+      "description": "Reproducible builds via locked dependencies",
+      "tools": {
+        "uv_lock": "uv.lock committed to Git for reproducible dependency resolution"
+      }
+    },
+    "pr_template": {
+      "checklist": [
+        "Tests written and passing (pytest)",
+        "Schemathesis contract tests passing",
+        "No Ruff/mypy warnings",
+        "TRD spec reference included",
+        "No breaking API changes (or documented + handshake triggered)",
+        "QA PASS report attached",
+        "Alembic migration included (if DB changes)"
+      ]
+    },
+    "cross_stack_coordination": {
+      "description": "Coordinate with Flutter_Commit_Agent for cross-stack PRs",
+      "method": "When backend commit changes contract.yaml, trigger Master_Orchestrator handshake before Flutter merge"
+    }
+  },
+  "gate_rule": "No commit without BOTH Code Review PASS and QA PASS. Full pipeline: Dev COMPLETE → Code Review PASS → QA PASS → Commit.",
+  "commit_convention": "Conventional Commits with TRD reference in body",
+  "listens_to": ["QA_REPORT", "CODE_REVIEW_PASS"],
+  "emits": ["COMMIT_REQUEST", "COMMIT_APPROVED"]
+}

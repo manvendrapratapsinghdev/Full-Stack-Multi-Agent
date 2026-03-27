@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Communication Protocol",
+  "description": "JSON schema defining the message format between Master Orchestrator and Sub-Agents in Mai Bhi Editor",
+
+  "definitions": {
+    "AgentId": {
+      "type": "string",
+      "enum": [
+        "Master_Orchestrator",
+        "Progress_Monitor",
+        "Continuity_Agent",
+        "Flutter_Requirement_Agent",
+        "Flutter_Dev_Lead",
+        "Flutter_QA",
+        "Flutter_Commit_Agent",
+        "Python_Requirement_Agent",
+        "Python_Dev_Lead",
+        "Python_QA",
+        "Python_Commit_Agent",
+        "Python_Code_Review",
+        "Flutter_Code_Review",
+        "PRD_Agent",
+        "Root_Requirement_Agent",
+        "Task_Breaking_Agent"
+      ]
+    },
+
+    "MessageType": {
+      "type": "string",
+      "enum": [
+        "TASK_ASSIGN",
+        "PRD_INGESTED",
+        "PRD_ANALYSIS_COMPLETE",
+        "PRD_GAP_DETECTED",
+        "PRD_UPDATED",
+        "FEATURE_EXTRACTED",
+        "REQUIREMENT_APPROVED",
+        "REQUIREMENT_REJECTED",
+        "REQUIREMENT_UPDATED",
+        "CLARIFICATION_NEEDED",
+        "TRACEABILITY_UPDATE",
+        "TASKS_GENERATED",
+        "SPRINT_PLAN_READY",
+        "SCOPE_CHANGE_DETECTED",
+        "TASK_COMPLETE",
+        "TASK_FAILED",
+        "CODE_REVIEW_PASS",
+        "CODE_REVIEW_FAIL",
+        "SYNC_REQUEST",
+        "SYNC_ACK",
+        "QA_REPORT",
+        "COMMIT_REQUEST",
+        "COMMIT_APPROVED",
+        "COMMIT_REJECTED",
+        "CONTRACT_UPDATE",
+        "CONTRACT_VALIDATED",
+        "STATE_UPDATE",
+        "HANDSHAKE_INIT",
+        "HANDSHAKE_ACK"
+      ]
+    },
+
+    "Priority": {
+      "type": "string",
+      "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+    },
+
+    "AgentMessage": {
+      "type": "object",
+      "required": ["message_id", "timestamp", "from", "to", "type", "payload"],
+      "properties": {
+        "message_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique message identifier"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "from": { "$ref": "#/definitions/AgentId" },
+        "to": { "$ref": "#/definitions/AgentId" },
+        "type": { "$ref": "#/definitions/MessageType" },
+        "priority": { "$ref": "#/definitions/Priority" },
+        "correlation_id": {
+          "type": "string",
+          "description": "Links related messages in a conversation chain"
+        },
+        "payload": {
+          "type": "object",
+          "description": "Message-type-specific data"
+        }
+      }
+    },
+
+    "TaskAssignPayload": {
+      "type": "object",
+      "required": ["task_id", "title", "trd_reference", "acceptance_criteria"],
+      "properties": {
+        "task_id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "trd_reference": { "type": "string", "description": "Section in TRD this task maps to" },
+        "sprint": { "type": "string" },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Task IDs this task depends on"
+        }
+      }
+    },
+
+    "QAReportPayload": {
+      "type": "object",
+      "required": ["task_id", "result", "tests_run", "tests_passed"],
+      "properties": {
+        "task_id": { "type": "string" },
+        "result": { "type": "string", "enum": ["PASS", "FAIL", "PARTIAL"] },
+        "tests_run": { "type": "integer" },
+        "tests_passed": { "type": "integer" },
+        "trd_compliance": {
+          "type": "object",
+          "properties": {
+            "covered_specs": { "type": "array", "items": { "type": "string" } },
+            "uncovered_specs": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "severity": { "type": "string", "enum": ["BLOCKER", "MAJOR", "MINOR"] },
+              "description": { "type": "string" },
+              "file": { "type": "string" },
+              "line": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+
+    "CodeReviewReportPayload": {
+      "type": "object",
+      "required": ["task_id", "result"],
+      "properties": {
+        "task_id": { "type": "string" },
+        "result": { "type": "string", "enum": ["PASS", "FAIL", "NEEDS_CHANGES"] },
+        "architecture_violations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "security_issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "severity": { "type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+              "description": { "type": "string" },
+              "file": { "type": "string" },
+              "line": { "type": "integer" }
+            }
+          }
+        },
+        "performance_concerns": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "quality_issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "blast_radius": {
+          "type": "object",
+          "properties": {
+            "files_changed": { "type": "integer" },
+            "modules_affected": { "type": "array", "items": { "type": "string" } },
+            "cross_stack_impact": { "type": "boolean" },
+            "contract_changed": { "type": "boolean" }
+          }
+        },
+        "trd_compliance": {
+          "type": "object",
+          "properties": {
+            "criteria_met": { "type": "array", "items": { "type": "string" } },
+            "criteria_missing": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+
+    "ContractUpdatePayload": {
+      "type": "object",
+      "required": ["contract_version", "changed_endpoints"],
+      "properties": {
+        "contract_version": { "type": "string" },
+        "changed_endpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "method": { "type": "string" },
+              "change_type": { "type": "string", "enum": ["ADDED", "MODIFIED", "REMOVED"] }
+            }
+          }
+        },
+        "breaking_changes": { "type": "boolean" },
+        "migration_notes": { "type": "string" }
+      }
+    },
+
+    "HandshakePayload": {
+      "type": "object",
+      "required": ["trigger", "affected_stack"],
+      "properties": {
+        "trigger": {
+          "type": "string",
+          "description": "What backend change triggered the handshake"
+        },
+        "affected_stack": { "type": "string", "enum": ["frontend", "backend", "both"] },
+        "requires_model_update": { "type": "boolean" },
+        "contract_diff": { "type": "string" }
+      }
+    }
+  },
+
+  "type": "object",
+  "$ref": "#/definitions/AgentMessage"
+}

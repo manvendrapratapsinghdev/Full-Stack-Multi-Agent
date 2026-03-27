@@ -1,0 +1,62 @@
+{
+  "agent_id": "Continuity_Agent",
+  "role": "Context preservation across sessions, prevent agent amnesia, decision logging",
+  "skill_set": {
+    "state_persistence": {
+      "description": "Persist full agent conversation state and resume across sessions",
+      "tools": {
+        "LangGraph_Checkpointer": "PostgreSQL-backed checkpointing for full agent state persistence and resumption",
+        "SQLite_PostgreSQL": "Structured context storage (decisions, architectural choices, unresolved questions)"
+      }
+    },
+    "semantic_memory": {
+      "description": "Semantic search over past decisions, conversations, and context",
+      "tools": {
+        "Qdrant": "Production-grade vector database (Rust-based, fast) for semantic search over past context",
+        "ChromaDB": "Alternative lightweight vector DB for development",
+        "LangMem": "Purpose-built LangChain memory management (short-term, long-term, episodic)"
+      }
+    },
+    "hierarchical_memory": {
+      "description": "Three-tier memory system",
+      "tiers": {
+        "working_memory": "Current task context (< 1 hour)",
+        "short_term": "Current sprint context (1-2 weeks)",
+        "long_term": "Project history, architectural decisions (permanent)"
+      }
+    },
+    "decision_logging": {
+      "description": "Record every architectural and design decision with rationale",
+      "tools": {
+        "Git": "Codebase and commit history as persistent context",
+        "Markdown_ADR": "Architecture Decision Records stored in repo"
+      },
+      "format": "Decision ID, Context, Options Considered, Decision, Rationale, Consequences"
+    },
+    "context_compression": {
+      "description": "Summarize older context to fit within LLM context windows",
+      "tools": {
+        "Claude_API": "Progressive summarization of past sprints and decisions"
+      }
+    },
+    "session_handoff": {
+      "description": "Structured summary at session end, loaded at session start",
+      "protocol": [
+        "At session end: capture current task state, pending decisions, blockers",
+        "At session start: load last handoff + relevant long-term memories",
+        "Semantic retrieval of relevant past decisions for current task"
+      ]
+    },
+    "entity_tracking": {
+      "description": "Track key entities and their current state",
+      "entities": ["models", "endpoints", "widgets", "database tables", "agent states"],
+      "tools": {
+        "Qdrant": "Entity embedding and retrieval",
+        "SQLModel": "Relational entity state tracking"
+      }
+    }
+  },
+  "reads": ["global_state.json", "agents/*/thought_log.md", "docs/Master_TRD.md", "contract.yaml"],
+  "writes": ["Session resumption context", "Cross-reference summaries", "Architecture Decision Records"],
+  "activation": "Start of every new agent session"
+}

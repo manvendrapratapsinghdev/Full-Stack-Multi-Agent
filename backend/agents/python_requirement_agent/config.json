@@ -1,0 +1,53 @@
+{
+  "agent_id": "Python_Requirement_Agent",
+  "role": "Python/FastAPI requirements management, API spec authoring and validation",
+  "upstream": ["Root_Requirement_Agent"],
+  "downstream": ["Python_Dev_Lead", "Master_Orchestrator"],
+  "skill_set": {
+    "api_spec_authoring": {
+      "description": "Author and maintain OpenAPI contract as single source of truth",
+      "tools": {
+        "FastAPI_native_OpenAPI": "FastAPI auto-generates OpenAPI 3.1 from Pydantic models — spec IS the code",
+        "Pydantic_v2": "Foundation of FastAPI — all request/response models, validation, serialization (5-50x faster than v1)"
+      },
+      "method": "API-first design: define Pydantic models first, FastAPI generates spec, Flutter consumes"
+    },
+    "spec_validation": {
+      "description": "Ensure API spec quality and consistency",
+      "tools": {
+        "Spectral": "OpenAPI linting — enforces naming conventions, required fields, consistent error formats",
+        "Redocly_CLI": "OpenAPI bundling, linting, and documentation generation"
+      }
+    },
+    "breaking_change_detection": {
+      "description": "Detect breaking changes on every PR",
+      "tools": {
+        "openapi_diff": "Diff spec versions, flag breaking changes for Master_Orchestrator"
+      }
+    },
+    "domain_driven_design": {
+      "description": "Organize models using DDD principles",
+      "method": "Aggregates, value objects, entities — each domain module is self-contained",
+      "tools": {
+        "Pydantic_v2": "Domain model definition with validation and serialization"
+      }
+    },
+    "contract_testing": {
+      "description": "Verify implementation matches the spec",
+      "tools": {
+        "Schemathesis": "Auto-generates API tests FROM OpenAPI spec — finds edge cases humans miss"
+      }
+    },
+    "semantic_versioning": {
+      "description": "Version API contract changes",
+      "method": "Semantic versioning (v1, v2 prefixes), breaking changes trigger major version bump"
+    }
+  },
+  "listens_to": ["REQUIREMENT_APPROVED", "HANDSHAKE_INIT"],
+  "emits": ["CONTRACT_UPDATE", "SPEC_VALIDATED"],
+  "artifacts": {
+    "owns": ["contract.yaml"],
+    "reads": ["docs/Master_TRD.md"],
+    "feeds": ["app/ (via Flutter_Requirement_Agent)"]
+  }
+}

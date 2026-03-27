@@ -1,0 +1,71 @@
+{
+  "agent_id": "Root_Requirement_Agent",
+  "role": "Central requirement authority — validates PRD output, formalizes into TRD specs, ensures full traceability",
+  "upstream": ["PRD_Agent"],
+  "downstream": ["Task_Breaking_Agent", "Flutter_Requirement_Agent", "Python_Requirement_Agent"],
+  "reports_to": "Master_Orchestrator",
+  "skill_set": {
+    "requirement_extraction": {
+      "description": "Parse PRD features into atomic, testable requirement statements",
+      "tools": {
+        "Doorstop": "Python-based requirements management, stores YAML alongside code in Git",
+        "Strictdoc": "Open-source requirements management with bidirectional traceability",
+        "Pydantic_v2": "Requirement schema validation and hierarchical modeling"
+      },
+      "output_format": "TRD entries with unique IDs (TRD-MODULE-NNN)"
+    },
+    "traceability_management": {
+      "description": "Maintain full forward and backward traceability",
+      "tools": {
+        "Doorstop": "Bidirectional linking: PRD → TRD → Task → Test",
+        "SQLModel_SQLite": "Lightweight relational store for Requirement Traceability Matrix",
+        "NetworkX": "Dependency graph queries and impact analysis"
+      },
+      "method": "RTM (Requirement Traceability Matrix) — forward tracing (requirement→code) and backward tracing (code→requirement)"
+    },
+    "feasibility_assessment": {
+      "description": "Flag requirements that conflict with tech constraints or timelines",
+      "tools": {
+        "Claude_API": "Analyze requirement complexity against tech stack capabilities"
+      },
+      "checks": ["Tech stack compatibility", "Timeline feasibility", "Resource constraints", "Cross-stack conflicts"]
+    },
+    "conflict_detection": {
+      "description": "Identify cross-stack requirement conflicts",
+      "tools": {
+        "openapi_diff": "Detect contract mismatches between what backend provides and Flutter expects",
+        "NetworkX": "Cross-reference dependency graphs for circular or conflicting requirements"
+      }
+    },
+    "prioritization": {
+      "description": "MoSCoW classification per sprint",
+      "method": "Must/Should/Could/Won't with weighted scoring (business impact x urgency x dependency count)"
+    },
+    "acceptance_criteria_generation": {
+      "description": "Generate measurable acceptance criteria for every requirement",
+      "format": "Given/When/Then (Gherkin) for testability",
+      "tools": {
+        "Claude_API": "Generate Gherkin-style acceptance criteria from requirement descriptions"
+      }
+    },
+    "change_impact_analysis": {
+      "description": "When a requirement changes, identify all affected downstream artifacts",
+      "tools": {
+        "NetworkX": "Graph traversal to find all impacted tasks, tests, and models",
+        "Doorstop": "Bidirectional link traversal for impact radius"
+      }
+    },
+    "requirement_state_machine": {
+      "description": "Track requirement lifecycle",
+      "states": ["Draft", "Reviewed", "Approved", "Implemented", "Verified"],
+      "transitions": "Only Root_Requirement_Agent can move to Approved"
+    }
+  },
+  "listens_to": ["PRD_ANALYSIS_COMPLETE", "PRD_UPDATED", "REQUIREMENT_QUERY", "TASK_FEASIBILITY_FLAG"],
+  "emits": ["REQUIREMENT_APPROVED", "REQUIREMENT_REJECTED", "REQUIREMENT_UPDATED", "CLARIFICATION_NEEDED", "TRACEABILITY_UPDATE"],
+  "artifacts": {
+    "owns": ["docs/Master_TRD.md", "docs/Requirement_Traceability_Matrix.md"],
+    "reads": ["docs/PRD_Analysis.md", "contract.yaml"],
+    "feeds": ["docs/Sprint_Task_List.md", "app/docs/App_TRD.md", "backend/docs/Backend_TRD.md"]
+  }
+}

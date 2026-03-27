@@ -1,0 +1,126 @@
+{
+  "agent_id": "Task_Breaking_Agent",
+  "role": "Decompose approved requirements into actionable sprint tasks with estimates, dependencies, and agent assignments",
+  "upstream": ["Root_Requirement_Agent"],
+  "downstream": ["Master_Orchestrator", "Progress_Monitor"],
+  "reports_to": "Master_Orchestrator",
+  "skill_set": {
+    "requirement_decomposition": {
+      "description": "Break a single TRD requirement into 1-N atomic tasks",
+      "tools": {
+        "LangGraph": "Multi-step agentic decomposition workflows (requirement in, task tree out)",
+        "Pydantic_v2": "Task schema modeling with validation",
+        "Graphlib_python": "Topological sorting of task dependencies"
+      },
+      "rules": [
+        "Each task completable by a single agent",
+        "Each task has clear Definition of Done (DoD)",
+        "No task spans more than 1 sprint",
+        "Backend API task always paired with Flutter integration task",
+        "Every dev task gets a sibling Code Review task (mandatory, cannot be skipped)",
+        "Every dev task gets a sibling QA task (mandatory, runs AFTER code review passes)",
+        "Task is NOT complete until full pipeline passes: Dev → Code Review → QA → Commit",
+        "Code Review task depends_on Dev task; QA task depends_on Code Review task; Commit depends_on QA task"
+      ],
+      "per_task_pipeline": {
+        "description": "Each dev sub-task MUST have 3 dependent tasks auto-generated",
+        "template": [
+          { "suffix": "-dev", "agent": "{stack}_Dev_Lead", "type": "implementation" },
+          { "suffix": "-cr", "agent": "{stack}_Code_Review", "type": "code_review", "depends_on": ["{task_id}-dev"] },
+          { "suffix": "-qa", "agent": "{stack}_QA", "type": "testing", "depends_on": ["{task_id}-cr"] },
+          { "suffix": "-commit", "agent": "{stack}_Commit_Agent", "type": "commit", "depends_on": ["{task_id}-qa"] }
+        ],
+        "example": {
+          "S1-01-dev": "Python_Dev_Lead implements HT SSO Login API",
+          "S1-01-cr": "Python_Code_Review reviews architecture, security, quality",
+          "S1-01-qa": "Python_QA runs unit, integration, contract, security tests",
+          "S1-01-commit": "Python_Commit_Agent commits with conventional format"
+        }
+      },
+      "output_format": {
+        "task_id": "S{sprint}-{seq}",
+        "title": "string",
+        "stack": "Frontend | Backend | Both",
+        "agent": "AgentId",
+        "trd_ref": "TRD-XXX-NNN",
+        "depends_on": ["task_ids"],
+        "complexity": "S | M | L | XL",
+        "acceptance_criteria": ["list"]
+      }
+    },
+    "sprint_sequencing": {
+      "description": "Order tasks into sprints respecting the dependency graph",
+      "tools": {
+        "Graphlib_python": "Topological sort for dependency-aware sequencing",
+        "NetworkX": "Critical Path Method (CPM) to estimate sprint duration",
+        "Linear_API_or_Jira_API": "Programmatic sprint creation and backlog management"
+      },
+      "rules": [
+        "Auth always Sprint 1 (blocks everything)",
+        "Backend API before Flutter integration within same sprint",
+        "Per-task pipeline order within sprint: Dev → Code Review → QA → Commit (sequential, gated)",
+        "Code Review runs immediately after Dev completes (NOT batched at sprint end)",
+        "QA runs immediately after Code Review passes (NOT batched at sprint end)",
+        "Cross-stack handshake tasks flagged for Master_Orchestrator",
+        "Max 8-10 dev tasks per sprint per stack (each generates 3 dependent pipeline tasks)"
+      ]
+    },
+    "complexity_estimation": {
+      "description": "Estimate task effort using historical data and LLM analysis",
+      "tools": {
+        "Claude_API": "LLM-assisted story point estimation using codebase context",
+        "Pandas_DuckDB": "Historical velocity analysis for calibration"
+      },
+      "scale": {
+        "S": "< 2 hours, single file change",
+        "M": "2-6 hours, multiple files, one module",
+        "L": "6-16 hours, multiple modules, integration required",
+        "XL": "16+ hours — MUST split into L or smaller before assignment"
+      },
+      "method": "T-shirt sizing with Fibonacci refinement (S→1, M→3, L→5, XL→8+)"
+    },
+    "parallelism_detection": {
+      "description": "Identify which tasks can run concurrently",
+      "tools": {
+        "Graphlib_python": "Identify independent subgraphs in dependency DAG",
+        "NetworkX": "Parallel group extraction from task graph"
+      },
+      "output": "Parallel groups within each sprint"
+    },
+    "cross_stack_flagging": {
+      "description": "Mark tasks that require Asynchronous Handshake",
+      "triggers": [
+        "Backend adds/changes an API endpoint",
+        "New data model impacts Flutter models",
+        "Contract.yaml modification required"
+      ]
+    },
+    "scope_change_handling": {
+      "description": "Re-plan when PRD or requirements change",
+      "tools": {
+        "openapi_diff": "Detect breaking changes in API contract",
+        "NetworkX": "Impact propagation through dependency graph"
+      },
+      "steps": [
+        "Diff old vs new requirements",
+        "Identify affected tasks (graph traversal)",
+        "Re-estimate impacted sprints",
+        "Emit SCOPE_CHANGE_DETECTED to Progress_Monitor"
+      ]
+    },
+    "work_breakdown_structure": {
+      "description": "Hierarchical decomposition from epics to implementable tasks",
+      "method": "Epic → Feature → User Story → Task (max 4-8 hours each)",
+      "tools": {
+        "Linear_API_or_Jira_API": "External project management sync"
+      }
+    }
+  },
+  "listens_to": ["REQUIREMENT_APPROVED", "REQUIREMENT_UPDATED", "PRD_UPDATED", "TASK_FEASIBILITY_FLAG", "QA_REPORT"],
+  "emits": ["TASKS_GENERATED", "SPRINT_PLAN_READY", "TASK_REASSIGNED", "SCOPE_CHANGE_DETECTED", "TASK_FEASIBILITY_FLAG"],
+  "artifacts": {
+    "owns": ["docs/Sprint_Task_List.md"],
+    "reads": ["docs/Master_TRD.md", "docs/PRD_Analysis.md", "docs/Requirement_Traceability_Matrix.md"],
+    "feeds": ["app/docs/App_Task_List.md", "backend/docs/Backend_Task_List.md", "global_state.json"]
+  }
+}

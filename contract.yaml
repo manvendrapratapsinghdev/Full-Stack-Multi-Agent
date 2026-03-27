@@ -1,0 +1,618 @@
+openapi: "3.0.3"
+info:
+  title:Muti AgentAPI Contract
+  version: "0.1.0"
+  description: |
+    Shared API contract between Flutter frontend and Python backend.
+    - Backend Agent: Writes and updates this spec
+    - Master Orchestrator: Validates changes
+    - Flutter Agent: Consumes spec to generate data models
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+  - url: https://api.maibhieditor.ht.com/v1
+    description: Production
+
+tags:
+  - name: auth
+    description: User authentication and profile
+  - name: submissions
+    description: Citizen news submission pipeline
+  - name: editorial
+    description: Editor review and moderation
+  - name: feed
+    description: News feed and discovery
+  - name: community
+    description: Community validation and reputation
+
+paths:
+  # --- Auth ---
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login with HT credentials
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Auth tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/profile:
+    get:
+      tags: [auth]
+      summary: Get current user profile with creator level
+      operationId: getUserProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  # --- Submissions ---
+  /submissions:
+    post:
+      tags: [submissions]
+      summary: Submit a citizen news report
+      operationId: createSubmission
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SubmissionCreate"
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  /submissions/my:
+    get:
+      tags: [submissions]
+      summary: Get current user's submissions (Posted by You)
+      operationId: getMySubmissions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [in_progress, under_review, published, rejected]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Submission"
+
+  /submissions/{id}:
+    get:
+      tags: [submissions]
+      summary: Get submission detail
+      operationId: getSubmission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmissionDetail"
+
+  # --- AI Processing ---
+  /submissions/{id}/ai-review:
+    post:
+      tags: [submissions]
+      summary: Trigger AI processing on a submission
+      operationId: triggerAIReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIReviewResult"
+
+  # --- Editorial ---
+  /editorial/queue:
+    get:
+      tags: [editorial]
+      summary: Get editor review queue sorted by AI confidence
+      operationId: getEditorialQueue
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [confidence_score, submitted_at, confirmations]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EditorialQueueItem"
+
+  /editorial/{id}/action:
+    post:
+      tags: [editorial]
+      summary: Editor action on a submission
+      operationId: editorAction
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditorAction"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+
+  # --- Feed ---
+  /feed:
+    get:
+      tags: [feed]
+      summary: Get published citizen news feed (News By You)
+      operationId: getNewsFeed
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: trending
+          in: query
+          schema:
+            type: boolean
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedResponse"
+
+  /feed/{id}:
+    get:
+      tags: [feed]
+      summary: Get full story detail page
+      operationId: getStoryDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StoryDetail"
+
+  # --- Community ---
+  /stories/{id}/confirm:
+    post:
+      tags: [community]
+      summary: Confirm/validate a citizen report
+      operationId: confirmStory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfirmationResult"
+
+  /stories/{id}/like:
+    post:
+      tags: [community]
+      summary: Like a story
+      operationId: likeStory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResult"
+
+  /creators/{id}/profile:
+    get:
+      tags: [community]
+      summary: Get creator public profile
+      operationId: getCreatorProfile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorProfile"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        avatar_url:
+          type: string
+        creator_level:
+          type: string
+          enum: [basic_creator, ht_approved_creator, trusted_reporter]
+        reputation_points:
+          type: integer
+        city:
+          type: string
+        stories_published:
+          type: integer
+        badges:
+          type: array
+          items:
+            type: string
+
+    SubmissionCreate:
+      type: object
+      required: [title, cover_image, description, city]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        cover_image:
+          type: string
+          format: binary
+        description:
+          type: string
+          maxLength: 5000
+        city:
+          type: string
+        additional_images:
+          type: array
+          items:
+            type: string
+            format: binary
+        tags:
+          type: array
+          items:
+            type: string
+
+    Submission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        city:
+          type: string
+        status:
+          type: string
+          enum: [in_progress, under_review, published, rejected]
+        cover_image_url:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        creator:
+          $ref: "#/components/schemas/UserProfile"
+
+    SubmissionDetail:
+      allOf:
+        - $ref: "#/components/schemas/Submission"
+        - type: object
+          properties:
+            original_text:
+              type: string
+            ai_rewritten_text:
+              type: string
+            ai_review:
+              $ref: "#/components/schemas/AIReviewResult"
+            additional_images:
+              type: array
+              items:
+                type: string
+            editor_notes:
+              type: string
+
+    AIReviewResult:
+      type: object
+      properties:
+        submission_id:
+          type: string
+          format: uuid
+        rewritten_text:
+          type: string
+        safety_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        suggested_tags:
+          type: array
+          items:
+            type: string
+        suggested_category:
+          type: string
+        hate_speech_detected:
+          type: boolean
+        toxicity_detected:
+          type: boolean
+        spam_detected:
+          type: boolean
+        duplicate_of:
+          type: string
+          format: uuid
+          nullable: true
+        language_detected:
+          type: string
+
+    EditorialQueueItem:
+      type: object
+      properties:
+        submission:
+          $ref: "#/components/schemas/SubmissionDetail"
+        ai_confidence:
+          type: number
+        community_confirmations:
+          type: integer
+        priority_rank:
+          type: integer
+
+    EditorAction:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [approve, edit, reject, mark_correction]
+        edited_title:
+          type: string
+        edited_description:
+          type: string
+        rejection_reason:
+          type: string
+        correction_notes:
+          type: string
+
+    FeedResponse:
+      type: object
+      properties:
+        stories:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeedItem"
+        next_cursor:
+          type: string
+          nullable: true
+
+    FeedItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        cover_image_url:
+          type: string
+        creator_name:
+          type: string
+        creator_level:
+          type: string
+        likes:
+          type: integer
+        confirmations:
+          type: integer
+        city:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+
+    StoryDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        creator:
+          $ref: "#/components/schemas/CreatorProfile"
+        editor_verified:
+          type: boolean
+        ai_verified:
+          type: boolean
+        editor_name:
+          type: string
+        likes:
+          type: integer
+        confirmations:
+          type: integer
+        city:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        user_has_confirmed:
+          type: boolean
+        user_has_liked:
+          type: boolean
+
+    ConfirmationResult:
+      type: object
+      properties:
+        story_id:
+          type: string
+          format: uuid
+        total_confirmations:
+          type: integer
+        confirmed:
+          type: boolean
+
+    LikeResult:
+      type: object
+      properties:
+        story_id:
+          type: string
+          format: uuid
+        total_likes:
+          type: integer
+        liked:
+          type: boolean
+
+    CreatorProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        avatar_url:
+          type: string
+        creator_level:
+          type: string
+          enum: [basic_creator, ht_approved_creator, trusted_reporter]
+        reputation_points:
+          type: integer
+        stories_published:
+          type: integer
+        badges:
+          type: array
+          items:
+            type: string
+        accuracy_rate:
+          type: number
+          format: float
+        joined_at:
+          type: string
+          format: date-time

@@ -1,0 +1,115 @@
+{
+  "agent_id": "Flutter_Code_Review",
+  "role": "Review Flutter code for architecture compliance, UI quality, performance, and code quality BEFORE QA runs",
+  "upstream": ["Flutter_Dev_Lead"],
+  "downstream": ["Flutter_QA"],
+  "skill_set": {
+    "architecture_review": {
+      "description": "Enforce Clean Architecture boundaries and feature-first structure",
+      "checks": [
+        "Feature modules follow data/domain/presentation layer separation",
+        "Presentation layer never imports from data layer directly",
+        "Domain layer has zero external dependencies",
+        "No cross-feature imports (features communicate via shared domain)",
+        "Dependency injection via GetIt/Injectable, no direct instantiation",
+        "BLoC/Cubit only in presentation layer, not in data or domain",
+        "Repository pattern used for all data access"
+      ],
+      "tools": {
+        "custom_lint": "Custom lint rules for architecture boundary enforcement",
+        "dart_code_metrics": "Cyclomatic complexity, maintainability index"
+      }
+    },
+    "security_review": {
+      "description": "Mobile security and data protection checks",
+      "checks": [
+        "Sensitive data stored in flutter_secure_storage, not SharedPreferences",
+        "No hardcoded API keys, secrets, or tokens",
+        "JWT tokens not logged or exposed in error messages",
+        "Certificate pinning configured for production API calls",
+        "No sensitive data in widget state visible to accessibility tools",
+        "Deep link validation (no open redirect vulnerabilities)"
+      ]
+    },
+    "ui_ux_review": {
+      "description": "UI consistency, accessibility, and responsiveness",
+      "checks": [
+        "All interactive widgets have Semantics labels (WCAG 2.1 AA)",
+        "Minimum tap target size 48x48dp",
+        "Color contrast ratios meet AA standard",
+        "Responsive layout (LayoutBuilder/MediaQuery, not hardcoded sizes)",
+        "Loading states for all async operations",
+        "Error states with retry actions for all network calls",
+        "Consistent use of AppTheme tokens (no inline colors/fonts)",
+        "RTL support for Hindi localization"
+      ]
+    },
+    "performance_review": {
+      "description": "Detect Flutter performance anti-patterns",
+      "checks": [
+        "No unnecessary widget rebuilds (const constructors used)",
+        "Lists use ListView.builder, not Column with children list",
+        "Images use cached_network_image with proper placeholders",
+        "No heavy computation on main thread (use compute/Isolate)",
+        "Proper disposal of controllers, streams, and subscriptions",
+        "No memory leaks from undisposed listeners or animations"
+      ]
+    },
+    "code_quality_review": {
+      "description": "Code readability, consistency, and Dart idioms",
+      "checks": [
+        "Freezed models for all immutable data classes",
+        "Proper null safety (no unnecessary null assertions !)",
+        "Consistent naming (lowerCamelCase for members, UpperCamelCase for types)",
+        "No dead code or unused imports",
+        "Error handling with typed failures (not generic catch)",
+        "Generated files (.g.dart, .freezed.dart) committed and up to date"
+      ],
+      "tools": {
+        "dart_analyze": "Built-in static analysis with strict mode",
+        "Ruff_equivalent": "flutter_lints + custom_lint rules"
+      }
+    },
+    "blast_radius_analysis": {
+      "description": "Assess impact of changes on other features",
+      "checks": [
+        "Identify all files changed and their widget tree dependents",
+        "Flag if shared core/ modules were modified",
+        "Flag if API models changed (check contract sync)",
+        "Flag if navigation routes changed (GoRouter config impact)",
+        "Flag if theme tokens changed (visual regression risk)"
+      ]
+    },
+    "trd_compliance": {
+      "description": "Verify implementation matches App_TRD specification",
+      "checks": [
+        "All acceptance criteria from TRD addressed in UI + logic",
+        "API integration matches contract.yaml endpoints",
+        "Localization keys present for all user-facing strings",
+        "Feature matches TRD wireframes/flows"
+      ]
+    }
+  },
+  "gate_rule": "Code review must PASS before QA agent can begin testing. FAIL blocks the pipeline and returns to Dev with issues.",
+  "review_report_format": {
+    "task_id": "string",
+    "result": "PASS | FAIL | NEEDS_CHANGES",
+    "architecture_violations": [],
+    "security_issues": [],
+    "ui_ux_issues": [],
+    "performance_concerns": [],
+    "quality_issues": [],
+    "blast_radius": {
+      "files_changed": "integer",
+      "features_affected": [],
+      "shared_core_impact": "boolean",
+      "contract_sync_needed": "boolean"
+    },
+    "trd_compliance": {
+      "criteria_met": [],
+      "criteria_missing": []
+    }
+  },
+  "listens_to": ["TASK_COMPLETE"],
+  "emits": ["CODE_REVIEW_PASS", "CODE_REVIEW_FAIL"]
+}

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAI BHI EDITOR — Multi-Agent Orchestration Flow</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --primary: #001F5C;
+      --accent:  #E63946;
+      --bg:      #F4F6FB;
+      --card:    #FFFFFF;
+      --border:  #D0D7E8;
+      --text:    #1A1A2E;
+      --muted:   #5A6A8A;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #001F5C 0%, #002d80 100%);
+      color: white;
+      padding: 36px 40px 28px;
+      border-bottom: 4px solid #E63946;
+    }
+    header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+    }
+    header p {
+      margin-top: 6px;
+      font-size: 13px;
+      opacity: 0.75;
+      font-weight: 300;
+    }
+    main {
+      max-width: 1300px;
+      margin: 40px auto;
+      padding: 0 24px 80px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #D0D7E8;
+      box-shadow: 0 4px 24px rgba(0,31,92,0.08);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 20px 28px 16px;
+      border-bottom: 1px solid #D0D7E8;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .badge {
+      background: #001F5C;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      white-space: nowrap;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+    .card-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #001F5C;
+      margin-bottom: 4px;
+    }
+    .card-header p {
+      font-size: 13px;
+      color: #5A6A8A;
+      line-height: 1.5;
+    }
+    .diagram-wrap {
+      padding: 40px 24px;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+      min-height: 200px;
+    }
+    .mermaid { min-width: 400px; }
+    .toolbar {
+      padding: 14px 28px;
+      border-top: 1px solid #D0D7E8;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: #001F5C;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: #002d80;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0,31,92,0.28);
+    }
+    .btn:active { transform: translateY(0); box-shadow: none; }
+    .btn svg { flex-shrink: 0; }
+    .btn-secondary {
+      background: #F4F6FB;
+      color: #001F5C;
+      border: 1.5px solid #C5CEE8;
+    }
+    .btn-secondary:hover {
+      background: #E8EDF7;
+      box-shadow: 0 4px 14px rgba(0,31,92,0.12);
+    }
+    .status {
+      font-size: 12px;
+      color: #5A6A8A;
+      min-width: 120px;
+      text-align: right;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: #8A9ABB;
+      border-top: 1px solid #E4E9F2;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>MAI BHI EDITOR — Multi-Agent Orchestration Flow</h1>
+  <p>Generated from input.mmd · 27 Mar 2026</p>
+</header>
+
+<main>
+  <div class="card">
+    <div class="card-header">
+      <span class="badge">Flow</span>
+      <div>
+        <h2>MAI BHI EDITOR — Multi-Agent Orchestration Flow</h2>
+        <p>Generated from input.mmd · 27 Mar 2026</p>
+      </div>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="mermaid" id="theDiagram">
+        %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1a73e8', 'primaryTextColor': '#202124', 'primaryBorderColor': '#1557b0', 'lineColor': '#5f6368', 'secondaryColor': '#e8f0fe', 'tertiaryColor': '#f1f3f4', 'noteTextColor': '#202124', 'noteBkgColor': '#fef7e0'}}}%%
+        flowchart LR
+            %% ── Styles ──────────────────────────────────────────────
+            classDef input fill:#34a853,stroke:#1e8e3e,color:#fff,stroke-width:2px
+            classDef orchestrator fill:#1a73e8,stroke:#1557b0,color:#fff,stroke-width:2px
+            classDef backend fill:#e8710a,stroke:#c05e09,color:#fff,stroke-width:2px
+            classDef frontend fill:#9334e6,stroke:#7627bb,color:#fff,stroke-width:2px
+            classDef qa fill:#d93025,stroke:#b3261e,color:#fff,stroke-width:2px
+            classDef commit fill:#188038,stroke:#137333,color:#fff,stroke-width:2px
+            classDef decision fill:#fef7e0,stroke:#f9ab00,color:#202124,stroke-width:2px
+            classDef monitor fill:#f1f3f4,stroke:#5f6368,color:#202124,stroke-width:2px
+            classDef event fill:#fce8e6,stroke:#d93025,color:#d93025,stroke-width:1px,stroke-dasharray:5
+            classDef skillcard fill:#fff,stroke:#d0d7e8,color:#202124,stroke-width:1px,text-align:left
+
+            %% ================================================================
+            %% MAIN FLOW (left side)
+            %% ================================================================
+
+            subgraph FLOW [" Multi-Agent Orchestration Flow "]
+                direction TB
+
+                PRD_INPUT(["PRD Documents"]):::input
+                PRD_INPUT -->|PRD_INGESTED| PRD_AGENT
+
+                %% Phase 1
+                PRD_AGENT["PRD_Agent"]:::orchestrator
+                PRD_AGENT -->|GAP_DETECTED| GAP_CHECK{"Gaps?"}:::decision
+                GAP_CHECK -->|Yes| CLARIFY["Stakeholder\nClarification"]:::event
+                CLARIFY --> PRD_AGENT
+                GAP_CHECK -->|Resolved| REQ_AGENT
+
+                %% Phase 2
+                REQ_AGENT["Root_Requirement\nAgent"]:::orchestrator
+                REQ_AGENT --> REQ_OK{"Feasible?"}:::decision
+                REQ_OK -->|Rejected| PRD_AGENT
+                REQ_OK -->|Approved| TASK_AGENT
+
+                %% Phase 3
+                TASK_AGENT["Task_Breaking\nAgent"]:::orchestrator
+                TASK_AGENT --> MASTER
+
+                %% Phase 4
+                MASTER["Master\nOrchestrator"]:::orchestrator
+                MASTER --> CONTRACT_OK{"Contract\nvalid?"}:::decision
+                CONTRACT_OK -->|No| BACKEND_REQ
+                CONTRACT_OK -->|Yes| ASSIGN
+
+                ASSIGN["Dispatch to Stacks"]:::orchestrator
+                ASSIGN --> BACKEND_REQ
+                ASSIGN --> FLUTTER_REQ
+
+                %% Backend Pipeline
+                subgraph BE [" Backend Stack "]
+                    direction TB
+                    BACKEND_REQ["Python_Requirement\nAgent"]:::backend
+                    BACKEND_REQ -->|CONTRACT_UPDATE| BACKEND_DEV
+                    BACKEND_DEV["Python_Dev_Lead"]:::backend
+                    BACKEND_DEV -->|TASK_COMPLETE| BACKEND_CR
+                    BACKEND_CR["Code Review"]:::monitor
+                    BACKEND_CR --> BACKEND_CR_OK{"Review\nPass?"}:::decision
+                    BACKEND_CR_OK -->|Changes Requested| BACKEND_DEV
+                    BACKEND_CR_OK -->|Approved| BACKEND_QA
+                    BACKEND_QA["Python_QA"]:::qa
+                    BACKEND_QA --> BE_OK{"Pass?"}:::decision
+                    BE_OK -->|Fail| BACKEND_DEV
+                    BE_OK -->|Pass| BACKEND_COMMIT
+                    BACKEND_COMMIT["Python_Commit\nAgent"]:::commit
+                    BACKEND_COMMIT --> BE_DONE(["PR Merged"]):::input
+                end
+
+                %% Frontend Pipeline
+                subgraph FE [" Frontend Stack "]
+                    direction TB
+                    FLUTTER_REQ["Flutter_Requirement\nAgent"]:::frontend
+                    FLUTTER_REQ -->|MODELS_GENERATED| FLUTTER_DEV
+                    FLUTTER_DEV["Flutter_Dev_Lead"]:::frontend
+                    FLUTTER_DEV -->|TASK_COMPLETE| FLUTTER_CR
+                    FLUTTER_CR["Code Review"]:::monitor
+                    FLUTTER_CR --> FLUTTER_CR_OK{"Review\nPass?"}:::decision
+                    FLUTTER_CR_OK -->|Changes Requested| FLUTTER_DEV
+                    FLUTTER_CR_OK -->|Approved| FLUTTER_QA
+                    FLUTTER_QA["Flutter_QA"]:::qa
+                    FLUTTER_QA --> FE_OK{"Pass?"}:::decision
+                    FE_OK -->|Fail| FLUTTER_DEV
+                    FE_OK -->|Pass| FLUTTER_COMMIT
+                    FLUTTER_COMMIT["Flutter_Commit\nAgent"]:::commit
+                    FLUTTER_COMMIT --> FE_DONE(["PR Merged"]):::input
+                end
+
+                %% Handshake
+                BACKEND_REQ -.->|"CONTRACT_UPDATE\n(breaking)"| FLUTTER_REQ
+
+                %% Sprint Completion
+                BE_DONE --> REVIEW
+                FE_DONE --> REVIEW
+                REVIEW["Sprint Review\n(Master Orchestrator)"]:::orchestrator
+                REVIEW --> MORE{"More\nsprints?"}:::decision
+                MORE -->|Yes| TASK_AGENT
+                MORE -->|No| RELEASE(["Release vX.Y.Z"]):::input
+
+                %% Continuous agents
+                MASTER -.->|STATE_UPDATE| PROGRESS
+                BACKEND_QA -.->|QA_REPORT| PROGRESS
+                FLUTTER_QA -.->|QA_REPORT| PROGRESS
+                PROGRESS["Progress_Monitor"]:::monitor
+                PROGRESS -.->|ESCALATE| MASTER
+
+                MASTER -.->|All events| CONTEXT
+                CONTEXT["Continuity_Agent"]:::monitor
+                CONTEXT -.->|Session resume| MASTER
+            end
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <span class="status" id="dlStatus"></span>
+      <button class="btn btn-secondary" id="dlSvgBtn" onclick="downloadSVG()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download as SVG
+      </button>
+      <button class="btn" id="dlBtn" onclick="downloadPNG()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download as PNG
+      </button>
+    </div>
+  </div>
+</main>
+
+<footer>Generated 27 Mar 2026 &middot; Mermaid.js v10 &middot; flowchart</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      primaryColor:       "#EEF2FF",
+      primaryTextColor:   "#1A1A2E",
+      primaryBorderColor: "#C5CEE8",
+      lineColor:          "#5A6A8A",
+      secondaryColor:     "#F3E5F5",
+      tertiaryColor:      "#FFF8E1",
+      fontSize:           "14px"
+    },
+    flowchart: { curve: "basis", padding: 20 }
+  });
+
+  function downloadPNG() {
+    const btn    = document.getElementById("dlBtn");
+    const status = document.getElementById("dlStatus");
+    const svg    = document.querySelector("#theDiagram svg");
+
+    if (!svg) {
+      if (status) status.textContent = "Diagram not ready — please wait.";
+      return;
+    }
+
+    if (btn)    btn.disabled = true;
+    if (status) status.textContent = "Preparing…";
+
+    const scale  = 6;
+    const bbox   = svg.getBoundingClientRect();
+    const w      = Math.ceil(bbox.width);
+    const h      = Math.ceil(bbox.height);
+
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns",       "http://www.w3.org/2000/svg");
+    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    clone.setAttribute("width",  w);
+    clone.setAttribute("height", h);
+
+    // Inline computed styles so canvas renders colours correctly
+    const srcEls = svg.querySelectorAll("*");
+    const dstEls = clone.querySelectorAll("*");
+    const CSS_PROPS = [
+      "fill","stroke","stroke-width","stroke-dasharray",
+      "font-family","font-size","font-weight","font-style",
+      "opacity","color"
+    ];
+    srcEls.forEach((src, i) => {
+      try {
+        const cs = window.getComputedStyle(src);
+        let style = "";
+        CSS_PROPS.forEach(p => {
+          const v = cs.getPropertyValue(p);
+          if (v) style += `${p}:${v};`;
+        });
+        if (style) dstEls[i].setAttribute("style", style);
+      } catch(e) {}
+    });
+
+    // White background
+    const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bg.setAttribute("width",  w);
+    bg.setAttribute("height", h);
+    bg.setAttribute("fill",   "#ffffff");
+    clone.insertBefore(bg, clone.firstChild);
+
+    const svgStr     = new XMLSerializer().serializeToString(clone);
+    const svgDataUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgStr);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width  = w * scale;
+      canvas.height = h * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const a = document.createElement("a");
+      a.download = "output.png";
+      a.href     = canvas.toDataURL("image/png");
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      if (btn)    { btn.disabled = false; }
+      if (status) status.textContent = "Downloaded!";
+      setTimeout(() => { if (status) status.textContent = ""; }, 3000);
+    };
+    img.onerror = () => {
+      if (btn)    btn.disabled = false;
+      if (status) status.textContent = "Error — try a different browser.";
+    };
+    img.src = svgDataUrl;
+  }
+
+  function downloadSVG() {
+    const btn    = document.getElementById("dlSvgBtn");
+    const status = document.getElementById("dlStatus");
+    const svg    = document.querySelector("#theDiagram svg");
+
+    if (!svg) {
+      if (status) status.textContent = "Diagram not ready — please wait.";
+      return;
+    }
+
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns",       "http://www.w3.org/2000/svg");
+    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+
+    // Inline computed styles
+    const srcEls = svg.querySelectorAll("*");
+    const dstEls = clone.querySelectorAll("*");
+    const CSS_PROPS = [
+      "fill","stroke","stroke-width","stroke-dasharray",
+      "font-family","font-size","font-weight","font-style",
+      "opacity","color"
+    ];
+    srcEls.forEach((src, i) => {
+      try {
+        const cs = window.getComputedStyle(src);
+        let style = "";
+        CSS_PROPS.forEach(p => {
+          const v = cs.getPropertyValue(p);
+          if (v) style += `${p}:${v};`;
+        });
+        if (style) dstEls[i].setAttribute("style", style);
+      } catch(e) {}
+    });
+
+    // White background rect
+    const bbox = svg.getBoundingClientRect();
+    const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    bg.setAttribute("width",  Math.ceil(bbox.width));
+    bg.setAttribute("height", Math.ceil(bbox.height));
+    bg.setAttribute("fill",   "#ffffff");
+    clone.insertBefore(bg, clone.firstChild);
+
+    const svgStr  = new XMLSerializer().serializeToString(clone);
+    const blob    = new Blob([svgStr], {type: "image/svg+xml;charset=utf-8"});
+    const url     = URL.createObjectURL(blob);
+    const a       = document.createElement("a");
+    a.download    = "output.svg";
+    a.href        = url;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    if (status) status.textContent = "Downloaded!";
+    setTimeout(() => { if (status) status.textContent = ""; }, 3000);
+  }
+</script>
+
+</body>
+</html>

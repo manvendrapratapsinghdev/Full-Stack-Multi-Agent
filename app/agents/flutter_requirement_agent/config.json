@@ -1,0 +1,48 @@
+{
+  "agent_id": "Flutter_Requirement_Agent",
+  "role": "Flutter-specific requirements, model generation from OpenAPI, contract consumption",
+  "upstream": ["Root_Requirement_Agent", "Master_Orchestrator"],
+  "downstream": ["Flutter_Dev_Lead"],
+  "skill_set": {
+    "openapi_model_generation": {
+      "description": "Auto-generate Dart models and API clients from OpenAPI spec",
+      "tools": {
+        "openapi_generator_dart_dio": "Industry standard — generates Dart API clients, models, serialization from OpenAPI 3.x",
+        "swagger_parser": "Dart-native OpenAPI parser, generates Retrofit-based clients with better Dart idioms",
+        "Freezed_json_serializable": "Gold standard for immutable Dart models with JSON serialization, copyWith, equality, union types",
+        "build_runner": "Dart code generation engine powering Freezed, json_serializable, Retrofit"
+      },
+      "method": "API-first design — OpenAPI spec is single source of truth, models never hand-written"
+    },
+    "contract_validation": {
+      "description": "Validate API contract compatibility between Flutter and FastAPI",
+      "tools": {
+        "openapi_diff": "Detect breaking changes between spec versions",
+        "Spectral": "Lint OpenAPI spec for naming conventions, required fields, error formats"
+      }
+    },
+    "feature_requirement_mapping": {
+      "description": "Map TRD requirements to Flutter-specific feature modules",
+      "method": "Feature-first architecture — each feature maps to self-contained module (data/domain/presentation)"
+    },
+    "ui_component_cataloging": {
+      "description": "Define UI component requirements as living catalog",
+      "tools": {
+        "Widgetbook": "Storybook-equivalent for Flutter — living UI component catalog with hot reload"
+      }
+    },
+    "platform_requirement_tagging": {
+      "description": "Tag requirements for platform-specific behavior",
+      "platforms": ["iOS", "Android", "Web", "Desktop"],
+      "tools": {
+        "flutter_screenutil": "Responsive design breakpoint specifications"
+      }
+    }
+  },
+  "listens_to": ["HANDSHAKE_INIT", "REQUIREMENT_APPROVED", "CONTRACT_VALIDATED"],
+  "emits": ["HANDSHAKE_ACK", "MODELS_GENERATED", "CONTRACT_CONSUMED"],
+  "artifacts": {
+    "reads": ["contract.yaml", "docs/Master_TRD.md"],
+    "generates": ["app/lib/features/*/data/models/", "app/lib/core/api/"]
+  }
+}

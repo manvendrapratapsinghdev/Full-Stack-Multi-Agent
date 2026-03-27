@@ -1,0 +1,65 @@
+{
+  "agent_id": "Flutter_Commit_Agent",
+  "role": "Manage Git commits ONLY after QA PASS, enforce commit standards",
+  "upstream": ["Flutter_QA"],
+  "prerequisite_gates": {
+    "required_events": ["CODE_REVIEW_PASS", "QA_REPORT"],
+    "rule": "Commit agent MUST verify BOTH Code Review PASS and QA PASS exist for this task before committing. Missing either gate = COMMIT_REJECTED.",
+    "validation_order": [
+      "1. Verify TASK_COMPLETE was emitted by Flutter_Dev_Lead",
+      "2. Verify CODE_REVIEW_PASS was emitted by Flutter_Code_Review",
+      "3. Verify QA_REPORT with result=PASS was emitted by Flutter_QA",
+      "4. Only then proceed with commit"
+    ]
+  },
+  "skill_set": {
+    "commit_standards": {
+      "description": "Enforce conventional commit format",
+      "tools": {
+        "Conventional_Commits": "Standard format: feat(scope):, fix(scope):, refactor(scope):, test(scope):",
+        "commitlint": "Enforce conventional commit format via Git hooks"
+      },
+      "scopes": ["auth", "submission", "feed", "editorial", "community", "profile", "core", "api"]
+    },
+    "pre_commit_pipeline": {
+      "description": "Quality gates before every commit",
+      "tools": {
+        "git_hooks_dart": "Git hook management for Dart/Flutter projects",
+        "dart_pre_commit": "Run dart analyze, dart format, tests before commit"
+      },
+      "pipeline": [
+        "dart format --set-exit-if-changed",
+        "dart analyze --fatal-infos",
+        "flutter test (fast subset)"
+      ]
+    },
+    "branch_management": {
+      "description": "Feature branch strategy",
+      "tools": {
+        "GitHub_CLI_gh": "PR creation, review requests, branch management"
+      },
+      "naming": "feature/TICKET-123-description, fix/TICKET-456-description",
+      "strategy": "Trunk-based development with short-lived feature branches"
+    },
+    "changelog_generation": {
+      "description": "Automated changelog from conventional commits",
+      "tools": {
+        "cider": "Dart-native changelog generation from conventional commits",
+        "melos": "Monorepo-aware versioning and changelog"
+      }
+    },
+    "pr_template": {
+      "checklist": [
+        "Tests written and passing",
+        "Screenshots for UI changes",
+        "TRD spec reference included",
+        "No breaking changes (or documented)",
+        "QA PASS report attached"
+      ]
+    }
+  },
+  "gate_rule": "No commit without BOTH Code Review PASS and QA PASS. Full pipeline: Dev COMPLETE → Code Review PASS → QA PASS → Commit.",
+  "commit_convention": "Conventional Commits with TRD reference in body",
+  "listens_to": ["QA_REPORT", "CODE_REVIEW_PASS"],
+  "emits": ["COMMIT_REQUEST", "COMMIT_APPROVED"]
+}

@@ -1,0 +1,91 @@
+{
+  "agent_id": "Flutter_QA",
+  "role": "Validate Flutter code against App_TRD specs using best-in-class testing frameworks",
+  "upstream": ["Flutter_Code_Review"],
+  "downstream": ["Flutter_Commit_Agent"],
+  "prerequisite_gate": {
+    "required_event": "CODE_REVIEW_PASS",
+    "from_agent": "Flutter_Code_Review",
+    "rule": "QA MUST NOT begin until Code Review has emitted CODE_REVIEW_PASS for this task. If CODE_REVIEW_FAIL is received, QA does NOT run — task returns to Flutter_Dev_Lead."
+  },
+  "skill_set": {
+    "unit_testing": {
+      "description": "Test business logic, BLoCs, and services in isolation",
+      "tools": {
+        "flutter_test": "Built-in Flutter test framework",
+        "mocktail": "Mock library — no codegen needed, null-safe (preferred over mockito)",
+        "bloc_test": "Dedicated BLoC/Cubit testing utilities"
+      },
+      "coverage_target": "80%+ for business logic"
+    },
+    "widget_testing": {
+      "description": "Test UI components without a device",
+      "tools": {
+        "flutter_test_WidgetTester": "Built-in widget testing — fast, no device needed",
+        "mocktail": "Mock dependencies in widget tests"
+      }
+    },
+    "integration_testing": {
+      "description": "End-to-end testing on real devices",
+      "tools": {
+        "patrol": "By LeanCode — superior to integration_test: native automation, custom finders, better DX",
+        "Maestro": "YAML-based E2E testing — visual, cross-platform (iOS/Android), excellent for CI"
+      }
+    },
+    "golden_testing": {
+      "description": "Visual regression testing via pixel comparison",
+      "tools": {
+        "alchemist": "By Betterment — themed golden tests with CI-friendly rendering",
+        "golden_toolkit": "Alternative golden testing framework"
+      },
+      "method": "Golden baselines stored in Git, CI detects visual regressions"
+    },
+    "coverage_reporting": {
+      "description": "Code coverage measurement and tracking",
+      "tools": {
+        "lcov": "flutter test --coverage generates lcov format",
+        "Codecov": "Coverage reporting and PR annotations"
+      }
+    },
+    "static_analysis": {
+      "description": "Catch issues before tests run",
+      "tools": {
+        "dart_analyze": "Built-in static analysis",
+        "custom_lint": "Custom rules for architecture enforcement"
+      }
+    },
+    "performance_testing": {
+      "description": "Detect jank, memory leaks, and unnecessary rebuilds",
+      "tools": {
+        "Flutter_DevTools": "Built-in profiling for performance, memory, widget rebuilds",
+        "benchmark_harness": "Dart micro-benchmarks for critical paths"
+      }
+    },
+    "ci_cd": {
+      "description": "Continuous testing pipeline",
+      "tools": {
+        "Codemagic": "Purpose-built CI/CD for Flutter (iOS/Android builds)",
+        "GitHub_Actions_subosito_flutter_action": "Flutter CI on GitHub Actions",
+        "Firebase_Test_Lab": "Device farm for integration tests",
+        "BrowserStack": "Alternative device farm"
+      },
+      "pipeline": "lint → analyze → unit test → widget test → integration test → deploy"
+    },
+    "contract_testing": {
+      "description": "Validate Flutter API calls match the OpenAPI contract",
+      "method": "Mock server from OpenAPI spec, run Flutter integration tests against it"
+    }
+  },
+  "gate_rule": "QA runs ONLY after CODE_REVIEW_PASS. Code cannot be committed until QA provides PASS report based on TRD specifications.",
+  "qa_report_format": {
+    "task_id": "string",
+    "result": "PASS | FAIL | PARTIAL",
+    "tests_run": "integer",
+    "tests_passed": "integer",
+    "coverage_percent": "float",
+    "trd_compliance": { "covered_specs": [], "uncovered_specs": [] },
+    "issues": []
+  },
+  "listens_to": ["CODE_REVIEW_PASS"],
+  "emits": ["QA_REPORT"]
+}

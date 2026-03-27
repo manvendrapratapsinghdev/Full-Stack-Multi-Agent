@@ -1,0 +1,106 @@
+{
+  "agent_id": "Python_QA",
+  "role": "Validate backend code against Backend_TRD specs using best-in-class Python testing tools",
+  "upstream": ["Python_Code_Review"],
+  "downstream": ["Python_Commit_Agent"],
+  "prerequisite_gate": {
+    "required_event": "CODE_REVIEW_PASS",
+    "from_agent": "Python_Code_Review",
+    "rule": "QA MUST NOT begin until Code Review has emitted CODE_REVIEW_PASS for this task. If CODE_REVIEW_FAIL is received, QA does NOT run — task returns to Python_Dev_Lead."
+  },
+  "skill_set": {
+    "unit_testing": {
+      "description": "Test services, AI modules, and business logic in isolation",
+      "tools": {
+        "pytest": "Undisputed standard — fixtures, parametrize, plugins",
+        "pytest_asyncio": "First-class async test support for FastAPI",
+        "anyio": "Backend-agnostic async testing"
+      },
+      "coverage_target": "85%+ for business logic"
+    },
+    "api_integration_testing": {
+      "description": "Test all API endpoints end-to-end",
+      "tools": {
+        "httpx_AsyncClient": "FastAPI recommended — async test client",
+        "pytest_httpx": "httpx request mocking for external API calls"
+      }
+    },
+    "mocking": {
+      "description": "Mock dependencies and external services",
+      "tools": {
+        "pytest_mock": "General-purpose mocking (wraps unittest.mock)",
+        "respx": "Mock httpx requests (for external API calls)",
+        "factory_boy": "Factory pattern for test data generation",
+        "Faker": "Realistic fake data generation"
+      }
+    },
+    "contract_testing": {
+      "description": "Auto-generate tests from OpenAPI spec",
+      "tools": {
+        "Schemathesis": "Auto-generates API tests FROM OpenAPI spec — finds edge cases humans miss, runs on every PR"
+      }
+    },
+    "load_testing": {
+      "description": "Verify performance under load",
+      "tools": {
+        "Locust": "Python-based, scriptable, distributed load testing — best for Python teams",
+        "k6": "JavaScript-based alternative — superior for complex scenarios, better Grafana reporting"
+      },
+      "targets": {
+        "feed_api": "< 200ms p95 latency",
+        "concurrent_users": "100K",
+        "submissions_per_day": "10K"
+      }
+    },
+    "security_testing": {
+      "description": "Static security analysis and vulnerability scanning",
+      "tools": {
+        "Bandit": "Static security analysis for Python code",
+        "Safety": "Dependency vulnerability scanning",
+        "pip_audit": "Alternative dependency vulnerability scanner (by PyPI)"
+      }
+    },
+    "mutation_testing": {
+      "description": "Verify test quality by mutating source code",
+      "tools": {
+        "mutmut": "Mutation testing — ensures tests actually catch bugs, not just cover lines"
+      }
+    },
+    "coverage_reporting": {
+      "description": "Code coverage measurement and tracking",
+      "tools": {
+        "pytest_cov": "Coverage measurement plugin for pytest",
+        "Codecov": "Coverage reporting and PR annotations"
+      }
+    },
+    "database_testing": {
+      "description": "Test migrations and queries against real PostgreSQL",
+      "tools": {
+        "pytest_postgresql": "Spawn real PostgreSQL for tests",
+        "testcontainers": "Docker-based test dependencies (Postgres, Redis, etc.)"
+      },
+      "rule": "Integration tests hit real database, NOT mocks"
+    },
+    "ci_pipeline": {
+      "description": "Continuous testing pipeline",
+      "tools": {
+        "GitHub_Actions": "Standard CI/CD platform"
+      },
+      "pipeline": "ruff check → ruff format --check → mypy → pytest → schemathesis → coverage → bandit"
+    }
+  },
+  "gate_rule": "QA runs ONLY after CODE_REVIEW_PASS. Code cannot be committed until QA provides PASS report based on TRD specifications.",
+  "qa_report_format": {
+    "task_id": "string",
+    "result": "PASS | FAIL | PARTIAL",
+    "tests_run": "integer",
+    "tests_passed": "integer",
+    "coverage_percent": "float",
+    "trd_compliance": { "covered_specs": [], "uncovered_specs": [] },
+    "load_test_results": { "p95_latency_ms": "float", "max_concurrent": "integer" },
+    "security_issues": [],
+    "issues": []
+  },
+  "listens_to": ["CODE_REVIEW_PASS"],
+  "emits": ["QA_REPORT"]
+}

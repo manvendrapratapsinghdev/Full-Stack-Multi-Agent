@@ -1,0 +1,58 @@
+{
+  "agent_id": "Progress_Monitor",
+  "role": "Sprint tracking, velocity measurement, blocker identification, reporting",
+  "skill_set": {
+    "sprint_tracking": {
+      "description": "Real-time sprint progress monitoring",
+      "tools": {
+        "Linear_API_or_Jira_API": "Pull real-time sprint data (story points completed, remaining, blocked)",
+        "Pandas_DuckDB": "In-process analytics on sprint metrics"
+      }
+    },
+    "velocity_analysis": {
+      "description": "Track and forecast team velocity",
+      "tools": {
+        "Pandas_DuckDB": "Rolling average of last 3 sprints, trend analysis",
+        "Apache_ECharts_or_Plotly": "Burndown/burnup charts, velocity graphs, cumulative flow diagrams"
+      },
+      "metrics": ["story_points_per_sprint", "cycle_time", "lead_time", "throughput"]
+    },
+    "burndown_reporting": {
+      "description": "Generate daily progress visualizations",
+      "tools": {
+        "Apache_ECharts": "Programmatic chart generation",
+        "Plotly": "Interactive burndown/burnup charts",
+        "Prometheus_Grafana": "Real-time monitoring dashboards (if running as service)"
+      }
+    },
+    "blocker_detection": {
+      "description": "Identify and escalate stuck tasks",
+      "tools": {
+        "SQLModel_PostgreSQL": "Store historical sprint data, detect tasks stuck beyond threshold"
+      },
+      "rules": ["Task untouched > 2 days = warning", "Task untouched > 3 days = escalation to Master_Orchestrator"]
+    },
+    "daily_standup_generation": {
+      "description": "Auto-generate standup summaries",
+      "tools": {
+        "Claude_API": "Summarize: what was done, what is planned, what is blocked",
+        "Slack_Discord_webhook": "Automated daily progress reports"
+      }
+    },
+    "earned_value_management": {
+      "description": "Track planned vs actual progress",
+      "method": "EVM — Planned Value, Earned Value, Actual Cost, Schedule Performance Index"
+    }
+  },
+  "monitors": ["global_state.json", "docs/Sprint_Task_List.md", "QA gate pass/fail rates"],
+  "reports_to": "Master_Orchestrator",
+  "metrics": [
+    "tasks_completed_per_sprint",
+    "qa_pass_rate",
+    "avg_task_cycle_time",
+    "blocker_count",
+    "cross_stack_sync_count",
+    "velocity_trend",
+    "burndown_deviation"
+  ]
+}

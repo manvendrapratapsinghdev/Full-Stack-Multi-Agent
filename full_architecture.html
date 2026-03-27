@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Orchestration Flow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        /* ── Header ──────────────────────────────────────── */
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-bottom: 2px solid #1a73e8;
+            padding: 24px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+        .header h1 span { color: #1a73e8; }
+        .header .subtitle {
+            font-size: 13px;
+            color: #8899aa;
+            margin-top: 4px;
+        }
+        .header-stats {
+            display: flex;
+            gap: 24px;
+            margin-top: 12px;
+        }
+        .stat-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 12px;
+            color: #aab;
+        }
+        .stat-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* ── Controls ────────────────────────────────────── */
+        .controls {
+            display: flex;
+            gap: 10px;
+            padding: 16px 40px;
+            background: #12121f;
+            border-bottom: 1px solid #222;
+            flex-wrap: wrap;
+        }
+        .controls button {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            background: #1a1a2e;
+            color: #ccc;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .controls button:hover {
+            background: #1a73e8;
+            border-color: #1a73e8;
+            color: #fff;
+        }
+        .controls button.active {
+            background: #1a73e8;
+            border-color: #1557b0;
+            color: #fff;
+        }
+
+        /* ── Main canvas ─────────────────────────────────── */
+        .canvas {
+            padding: 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* ── Phase container ─────────────────────────────── */
+        .phase {
+            margin-bottom: 8px;
+            position: relative;
+        }
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .phase-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .phase-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .phase-desc {
+            font-size: 12px;
+            color: #667;
+            margin-left: auto;
+        }
+        .phase-toggle {
+            font-size: 18px;
+            color: #556;
+            transition: transform 0.3s;
+            margin-left: 8px;
+        }
+        .phase.collapsed .phase-toggle { transform: rotate(-90deg); }
+        .phase.collapsed .phase-body { display: none; }
+
+        .phase-body {
+            background: #16162a;
+            border: 1px solid #252540;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 12px;
+        }
+
+        /* ── Connector line between phases ───────────────── */
+        .connector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px 0;
+        }
+        .connector .line {
+            width: 2px;
+            height: 28px;
+            background: linear-gradient(to bottom, #1a73e8, #1a73e855);
+        }
+        .connector .arrow {
+            width: 0; height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #1a73e8;
+        }
+        .connector .msg-label {
+            font-size: 10px;
+            color: #1a73e8;
+            background: #0f0f1a;
+            padding: 2px 8px;
+            border-radius: 8px;
+            border: 1px solid #1a73e833;
+            margin: 4px 0;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        /* ── Agent card ──────────────────────────────────── */
+        .agent-card {
+            background: #1e1e36;
+            border: 1px solid #2a2a4a;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px;
+            height: 100%;
+        }
+        .agent-card:hover {
+            border-color: #3a3a6a;
+            transform: translateX(2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .agent-name {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .agent-role {
+            font-size: 11px;
+            color: #889;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            font-weight: 400;
+        }
+        .agent-tasks {
+            list-style: none;
+            padding: 0;
+        }
+        .agent-tasks li {
+            font-size: 12px;
+            color: #99a;
+            padding: 2px 0 2px 14px;
+            position: relative;
+        }
+        .agent-tasks li::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 9px;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #445;
+        }
+        .agent-artifacts {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .artifact {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            background: rgba(26, 115, 232, 0.1);
+            color: #5a9cf5;
+            border: 1px solid rgba(26, 115, 232, 0.2);
+        }
+
+        /* ── Color accents per agent type ────────────────── */
+        .agent-card.orchestrator::before { background: #1a73e8; }
+        .agent-card.orchestrator .agent-name { color: #5a9cf5; }
+
+        .agent-card.backend::before { background: #e8710a; }
+        .agent-card.backend .agent-name { color: #f5a623; }
+
+        .agent-card.frontend::before { background: #9334e6; }
+        .agent-card.frontend .agent-name { color: #bb7af7; }
+
+        .agent-card.code-review::before { background: #e37400; }
+        .agent-card.code-review .agent-name { color: #f5c542; }
+
+        .agent-card.qa::before { background: #d93025; }
+        .agent-card.qa .agent-name { color: #f56b62; }
+
+        .agent-card.commit::before { background: #188038; }
+        .agent-card.commit .agent-name { color: #5cb870; }
+
+        .agent-card.monitor::before { background: #5f6368; }
+        .agent-card.monitor .agent-name { color: #9aa0a6; }
+
+        /* ── Decision diamond ────────────────────────────── */
+        .decision-node {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 16px auto;
+            max-width: 320px;
+        }
+        .diamond {
+            background: #2a2518;
+            border: 2px solid #f9ab00;
+            border-radius: 8px;
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #f9d271;
+            position: relative;
+        }
+        .decision-paths {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+        .path-label {
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .path-label.yes { background: #1a3320; color: #5cb870; border: 1px solid #2a5535; }
+        .path-label.no { background: #331a1a; color: #f56b62; border: 1px solid #552a2a; }
+        .path-label.pass { background: #1a3320; color: #5cb870; border: 1px solid #2a5535; }
+        .path-label.fail { background: #331a1a; color: #f56b62; border: 1px solid #552a2a; }
+
+        /* ── Parallel stacks layout ──────────────────────── */
+        .parallel-stacks {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .stack-column {
+            background: #13132a;
+            border: 1px solid #252545;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .stack-column h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #252545;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stack-column.backend-col h3 { color: #f5a623; }
+        .stack-column.frontend-col h3 { color: #bb7af7; }
+
+        /* ── Pipeline step connector inside stacks ────────── */
+        .pipe-step {
+            position: relative;
+        }
+        .pipe-connector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 0;
+        }
+        .pipe-connector .pipe-line {
+            width: 2px;
+            height: 16px;
+        }
+        .pipe-connector .pipe-arrow {
+            width: 0; height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+        .backend-col .pipe-connector .pipe-line { background: #e8710a55; }
+        .backend-col .pipe-connector .pipe-arrow { border-top: 6px solid #e8710a; }
+        .frontend-col .pipe-connector .pipe-line { background: #9334e655; }
+        .frontend-col .pipe-connector .pipe-arrow { border-top: 6px solid #9334e6; }
+
+        .pipe-msg {
+            font-size: 10px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            text-align: center;
+            padding: 2px 0;
+        }
+        .backend-col .pipe-msg { color: #e8710a99; }
+        .frontend-col .pipe-msg { color: #9334e699; }
+
+        /* ── QA Loop indicator ────────────────────────────── */
+        .qa-loop {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+            padding: 6px 12px;
+            background: rgba(217, 48, 37, 0.08);
+            border: 1px dashed #d9302555;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #f56b62;
+        }
+        .qa-loop .loop-icon {
+            font-size: 14px;
+        }
+
+        /* ── Merged output ────────────────────────────────── */
+        .merged-output {
+            text-align: center;
+            padding: 12px;
+            background: #1a2e1a;
+            border: 1px solid #2a5535;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+        .merged-output .label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #5cb870;
+        }
+
+        /* ── Handshake panel ─────────────────────────────── */
+        .handshake-panel {
+            background: linear-gradient(135deg, #1a1025 0%, #15102a 50%, #1a2535 100%);
+            border: 1px solid #352a55;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .handshake-flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+        .hs-step {
+            flex-shrink: 0;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            text-align: center;
+            min-width: 160px;
+        }
+        .hs-arrow {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .hs-arrow .hs-line {
+            width: 40px;
+            height: 2px;
+        }
+        .hs-arrow .hs-label {
+            font-size: 9px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            white-space: nowrap;
+        }
+
+        /* ── Continuous panels (side by side) ─────────────── */
+        .continuous-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin: 24px 0;
+        }
+        .continuous-panel {
+            background: #16162a;
+            border: 1px solid #252540;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .continuous-panel h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #9aa0a6;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .continuous-panel h3 .pulse {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #34a853;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ── Scope change panel ──────────────────────────── */
+        .scope-panel {
+            background: #1a1520;
+            border: 1px dashed #d9302544;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .scope-flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .scope-step {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            background: #221a2e;
+            border: 1px solid #352a45;
+            color: #bb9;
+        }
+        .scope-arrow {
+            color: #d93025;
+            font-size: 18px;
+        }
+
+        /* ── Message legend ──────────────────────────────── */
+        .legend {
+            background: #12121f;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 32px;
+        }
+        .legend h3 {
+            font-size: 14px;
+            color: #889;
+            margin-bottom: 12px;
+        }
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #778;
+        }
+        .legend-line {
+            width: 30px;
+            height: 2px;
+            flex-shrink: 0;
+        }
+        .legend-line.solid { background: #1a73e8; }
+        .legend-line.dashed { background: repeating-linear-gradient(90deg, #1a73e8 0 4px, transparent 4px 8px); }
+        .legend-dot {
+            width: 12px; height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        /* ── Responsive ──────────────────────────────────── */
+        @media (max-width: 900px) {
+            .parallel-stacks { grid-template-columns: 1fr; }
+            .continuous-grid { grid-template-columns: 1fr; }
+            .canvas { padding: 20px; }
+            .handshake-flow { flex-direction: column; }
+            .hs-arrow { transform: rotate(90deg); }
+        }
+
+        /* ── Print styles ────────────────────────────────── */
+        @media print {
+            body { background: #fff; color: #222; }
+            .phase-body { background: #f9f9f9; border-color: #ddd; }
+            .agent-card { background: #fff; border-color: #ddd; }
+            .controls { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════════════ -->
+<div class="header">
+    <h1>Multi-Agent Orchestration Flow</h1>
+    <div class="subtitle">16 Agents &middot; 28 Message Types &middot; Redis PubSub &middot; Enforced 4-Stage Pipeline</div>
+    <div class="header-stats">
+        <span class="stat-chip"><span class="dot" style="background:#1a73e8"></span> 6 Orchestration Agents</span>
+        <span class="stat-chip"><span class="dot" style="background:#e8710a"></span> 5 Backend Agents</span>
+        <span class="stat-chip"><span class="dot" style="background:#9334e6"></span> 5 Frontend Agents</span>
+        <span class="stat-chip"><span class="dot" style="background:#34a853"></span> contract.yaml (OpenAPI 3.0.3)</span>
+        <span class="stat-chip"><span class="dot" style="background:#f9ab00"></span> global_state.json</span>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     CONTROLS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="highlightFlow('primary')" class="active" id="btn-primary">Primary Flow</button>
+    <button onclick="highlightFlow('handshake')" id="btn-handshake">Handshake Protocol</button>
+    <button onclick="highlightFlow('scope')" id="btn-scope">Scope Change</button>
+    <button onclick="highlightFlow('all')" id="btn-all">Show All</button>
+</div>
+
+<div class="canvas">
+
+    <!-- ═══════════════════════════════════════════════════════
+         PHASE 1 — PRD INGESTION & ANALYSIS
+         ═══════════════════════════════════════════════════════ -->
+    <div class="phase" id="phase-1">
+        <div class="phase-header" onclick="togglePhase('phase-1')">
+            <div class="phase-number" style="background:#1a73e8">1</div>
+            <div class="phase-title">PRD Ingestion & Analysis</div>
+            <div class="phase-desc">pitch.md + community_pr.md &rarr; 38 features, 22 gaps</div>
+            <div class="phase-toggle">&#9660;</div>
+        </div>
+        <div class="phase-body">
+            <!-- Input -->
+            <div style="text-align:center; margin-bottom:16px;">
+                <span style="display:inline-block; background:#1a3320; border:1px solid #2a5535; border-radius:20px; padding:8px 20px; color:#5cb870; font-size:13px; font-weight:600;">
+                    /pitch.md + /community_pr.md (PRD Documents)
+                </span>
+            </div>
+
+            <div class="connector">
+                <div class="line"></div>
+                <span class="msg-label">PRD_INGESTED</span>
+                <div class="arrow"></div>
+            </div>
+
+            <!-- PRD Agent -->
+            <div class="agent-card orchestrator">
+                <div class="agent-name">
+                    PRD_Agent
+                    <span class="agent-role">Orchestration Layer</span>
+                </div>
+                <ul class="agent-tasks">
+                    <li>Parse raw PRD into structured sections</li>
+                    <li>Extract discrete features with scope boundaries</li>
+                    <li>Generate INVEST-compliant user stories</li>
+                    <li>MoSCoW prioritization (Must/Should/Could/Won't)</li>
+                    <li>Gap analysis against industry checklist (22 gaps found)</li>
+                    <li>Feature dependency graph via NetworkX</li>
+                </ul>
+                <div class="agent-artifacts">
+                    <span class="artifact">docs/PRD_Analysis.md</span>
+                    <span class="artifact">LangChain/LangGraph</span>
+                    <span class="artifact">Unstructured.io</span>
+                    <span class="artifact">Pydantic v2</span>
+                </div>
+            </div>
+
+            <!-- Decision -->
+            <div class="decision-node">
+                <div class="diamond">Gaps found?</div>
+            </div>
+            <div class="decision-paths">
+                <span class="path-label yes">No / Resolved &rarr; PRD_ANALYSIS_COMPLETE</span>
+                <span class="path-label no">Yes &rarr; CLARIFICATION_NEEDED to Stakeholder</span>
+            </div>
+
+            <!-- Output state -->
+            <div style="text-align:center; margin-top:16px;">
+                <div style="display:inline-block; background:rgba(26,115,232,0.08); border:1px solid rgba(26,115,232,0.2); border-radius:8px; padding:10px 20px; color:#5a9cf5; font-size:12px;">
+                    <strong>PRD_ANALYSIS_COMPLETE</strong><br>
+                    38 features extracted &middot; docs/PRD_Analysis.md
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <div class="line"></div>
+        <span class="msg-label">PRD_ANALYSIS_COMPLETE</span>
+        <div class="arrow"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PHASE 2 — REQUIREMENT FORMALIZATION
+         ═══════════════════════════════════════════════════════ -->
+    <div class="phase" id="phase-2">
+        <div class="phase-header" onclick="togglePhase('phase-2')">
+            <div class="phase-number" style="background:#1a73e8">2</div>
+            <div class="phase-title">Requirement Formalization</div>
+            <div class="phase-desc">Features &rarr; Atomic TRD specs + RTM traceability</div>
+            <div class="phase-toggle">&#9660;</div>
+        </div>
+        <div class="phase-body">
+            <div class="agent-card orchestrator">
+                <div class="agent-name">
+                    Root_Requirement_Agent
+                    <span class="agent-role">Orchestration Layer</span>
+                </div>
+                <ul class="agent-tasks">
+                    <li>Parse PRD features into atomic, testable requirement statements</li>
+                    <li>Generate Gherkin-style acceptance criteria for every requirement</li>
+                    <li>Feasibility assessment (tech constraints, timeline, resources)</li>
+                    <li>Cross-stack requirement conflict detection</li>
+                    <li>Requirement state machine: Draft &rarr; Reviewed &rarr; Approved</li>
+                    <li>Forward + backward traceability via RTM</li>
+                    <li>Change impact analysis when requirements change</li>
+                </ul>
+                <div class="agent-artifacts">
+                    <span class="artifact">docs/Master_TRD.md</span>
+                    <span class="artifact">docs/Requirement_Traceability_Matrix.md</span>
+                    <span class="artifact">Doorstop/Strictdoc</span>
+                    <span class="artifact">NetworkX</span>
+                </div>
+            </div>
+
+            <div class="decision-node">
+                <div class="diamond">Requirement feasible?</div>
+            </div>
+            <div class="decision-paths">
+                <span class="path-label yes">REQUIREMENT_APPROVED &rarr; Phase 3</span>
+                <span class="path-label no">REQUIREMENT_REJECTED &rarr; Flag back to PRD_Agent</span>
+            </div>
+
+            <div style="text-align:center; margin-top:16px;">
+                <div style="display:inline-block; background:rgba(26,115,232,0.08); border:1px solid rgba(26,115,232,0.2); border-radius:8px; padding:10px 20px; color:#5a9cf5; font-size:12px;">
+                    <strong>Approved TRD + RTM</strong><br>
+                    docs/Master_TRD.md &middot; docs/Requirement_Traceability_Matrix.md
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <div class="line"></div>
+        <span class="msg-label">REQUIREMENT_APPROVED</span>
+        <div class="arrow"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PHASE 3 — TASK DECOMPOSITION
+         ═══════════════════════════════════════════════════════ -->
+    <div class="phase" id="phase-3">
+        <div class="phase-header" onclick="togglePhase('phase-3')">
+            <div class="phase-number" style="background:#1a73e8">3</div>
+            <div class="phase-title">Task Decomposition & Sprint Planning</div>
+            <div class="phase-desc">TRD &rarr; Atomic tasks &middot; Dependency DAG &middot; Sprint sequencing</div>
+            <div class="phase-toggle">&#9660;</div>
+        </div>
+        <div class="phase-body">
+            <div class="agent-card orchestrator">
+                <div class="agent-name">
+                    Task_Breaking_Agent
+                    <span class="agent-role">Orchestration Layer</span>
+                </div>
+                <ul class="agent-tasks">
+                    <li>Decompose TRD requirements into atomic tasks (S/M/L/XL complexity)</li>
+                    <li>Topological sort via graphlib for dependency ordering</li>
+                    <li>Critical Path Method (CPM) sprint duration estimation</li>
+                    <li>Sprint sequencing: Auth always Sprint 1, Backend API before Flutter</li>
+                    <li>Max 8-10 dev tasks per sprint per stack</li>
+                    <li><strong>Per-task pipeline auto-generation:</strong> each dev task spawns 3 gated sub-tasks (-cr, -qa, -commit)</li>
+                    <li>Identify parallel task groups</li>
+                    <li>Flag cross-stack handshake tasks for Master_Orchestrator</li>
+                    <li>Work breakdown: Epic &rarr; Feature &rarr; Story &rarr; Task</li>
+                </ul>
+                <div class="agent-artifacts">
+                    <span class="artifact">docs/Sprint_Task_List.md</span>
+                    <span class="artifact">app/docs/App_Task_List.md</span>
+                    <span class="artifact">backend/docs/Backend_Task_List.md</span>
+                    <span class="artifact">graphlib_python</span>
+                </div>
+            </div>
+
+            <div style="text-align:center; margin-top:16px;">
+                <div style="display:inline-block; background:rgba(26,115,232,0.08); border:1px solid rgba(26,115,232,0.2); border-radius:8px; padding:10px 20px; color:#5a9cf5; font-size:12px;">
+                    <strong>TASKS_GENERATED + SPRINT_PLAN_READY</strong><br>
+                    Task format: S{sprint}-{seq} &middot; Assigned to agents with dependencies
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <div class="line"></div>
+        <span class="msg-label">SPRINT_PLAN_READY</span>
+        <div class="arrow"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PHASE 4 — MASTER ORCHESTRATOR
+         ═══════════════════════════════════════════════════════ -->
+    <div class="phase" id="phase-4">
+        <div class="phase-header" onclick="togglePhase('phase-4')">
+            <div class="phase-number" style="background:#1a73e8">4</div>
+            <div class="phase-title">Orchestration & Task Assignment</div>
+            <div class="phase-desc">Validate &middot; Resolve conflicts &middot; Dispatch to Backend + Frontend</div>
+            <div class="phase-toggle">&#9660;</div>
+        </div>
+        <div class="phase-body">
+            <div class="agent-card orchestrator">
+                <div class="agent-name">
+                    Master_Orchestrator
+                    <span class="agent-role">Principal Coordinator</span>
+                </div>
+                <ul class="agent-tasks">
+                    <li>Validate sprint plan and contract (Spectral linting)</li>
+                    <li>Conflict resolution ladder: auto-resolve &rarr; human-in-loop &rarr; rollback</li>
+                    <li>Event-driven coordination via Redis PubSub</li>
+                    <li>LangGraph-based orchestration with checkpointing</li>
+                    <li>PostgreSQL/Redis for state persistence</li>
+                    <li><strong>Enforced 4-stage pipeline per task:</strong> Dev &rarr; Code Review &rarr; QA &rarr; Commit (no stage skippable)</li>
+                    <li>Task status machine: ASSIGNED &rarr; DEV_COMPLETE &rarr; CODE_REVIEW_PASS &rarr; QA_PASS &rarr; COMMITTED</li>
+                    <li>Pipeline violation detection and rejection</li>
+                    <li>Parallel execution management across stacks</li>
+                    <li>Update global_state.json on every state change</li>
+                </ul>
+                <div class="agent-artifacts">
+                    <span class="artifact">global_state.json</span>
+                    <span class="artifact">contract.yaml</span>
+                    <span class="artifact">LangGraph</span>
+                    <span class="artifact">Redis PubSub</span>
+                </div>
+            </div>
+
+            <div class="decision-node">
+                <div class="diamond">Contract valid?</div>
+            </div>
+            <div class="decision-paths">
+                <span class="path-label yes">CONTRACT_VALIDATED &rarr; TASK_ASSIGN to stacks</span>
+                <span class="path-label no">No &rarr; Fix via Python_Requirement_Agent</span>
+            </div>
+
+            <div style="text-align:center; margin-top:16px;">
+                <div style="display:inline-block; background:rgba(26,115,232,0.08); border:1px solid rgba(26,115,232,0.2); border-radius:8px; padding:10px 20px; color:#5a9cf5; font-size:12px;">
+                    <strong>TASK_ASSIGN</strong> &rarr; Parallel dispatch to Backend + Frontend stacks
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <div class="line"></div>
+        <span class="msg-label">TASK_ASSIGN (parallel)</span>
+        <div class="arrow"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PHASE 5 — PARALLEL STACK EXECUTION
+         ═══════════════════════════════════════════════════════ -->
+    <div class="phase" id="phase-5">
+        <div class="phase-header" onclick="togglePhase('phase-5')">
+            <div class="phase-number" style="background:linear-gradient(135deg, #e8710a, #9334e6)">5</div>
+            <div class="phase-title">Parallel Stack Execution (4-Stage Pipeline)</div>
+            <div class="phase-desc">Per task: Dev &rarr; Code Review &rarr; QA &rarr; Commit &middot; Backend + Frontend in parallel</div>
+            <div class="phase-toggle">&#9660;</div>
+        </div>
+        <div class="phase-body">
+            <div class="parallel-stacks">
+
+                <!-- ── Backend Column ────────────────────── -->
+                <div class="stack-column backend-col">
+                    <h3><span class="dot" style="background:#e8710a; width:10px; height:10px; border-radius:50%; display:inline-block;"></span> Backend Stack (FastAPI + Python)</h3>
+
+                    <div class="pipe-step">
+                        <div class="agent-card backend">
+                            <div class="agent-name">
+                                Python_Requirement_Agent
+                                <span class="agent-role">Spec Author</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li>Author &amp; maintain OpenAPI contract (single source of truth)</li>
+                                <li>Pydantic v2 for all request/response models</li>
+                                <li>Spectral lint + openapi_diff breaking change detection</li>
+                                <li>Domain-Driven Design (DDD) model organization</li>
+                                <li>Schemathesis auto-generated contract tests</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">contract.yaml</span>
+                                <span class="artifact">Spectral</span>
+                                <span class="artifact">Redocly CLI</span>
+                            </div>
+                        </div>
+                        <div class="pipe-connector">
+                            <div class="pipe-line"></div>
+                            <div class="pipe-arrow"></div>
+                        </div>
+                        <div class="pipe-msg">CONTRACT_UPDATE</div>
+                    </div>
+
+                    <div class="pipe-step">
+                        <div class="agent-card backend">
+                            <div class="agent-name">
+                                Python_Dev_Lead
+                                <span class="agent-role">Implementation</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li>Async FastAPI 0.110+ implementation</li>
+                                <li>SQLAlchemy 2.0 + asyncpg (PostgreSQL)</li>
+                                <li>Alembic migrations</li>
+                                <li>JWT auth (FastAPI_Users, python_jose)</li>
+                                <li>Celery/Redis background task queue</li>
+                                <li>structlog + Prometheus + OpenTelemetry</li>
+                                <li>Docker + Cloud Build + Cloud Run</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">Clean Architecture</span>
+                                <span class="artifact">Ruff + mypy</span>
+                                <span class="artifact">uv</span>
+                            </div>
+                        </div>
+                        <div class="pipe-connector">
+                            <div class="pipe-line"></div>
+                            <div class="pipe-arrow"></div>
+                        </div>
+                        <div class="pipe-msg">TASK_COMPLETE</div>
+                    </div>
+
+                    <div class="pipe-step">
+                        <div class="agent-card code-review">
+                            <div class="agent-name">
+                                Python_Code_Review
+                                <span class="agent-role">Review Gate</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li>Architecture boundary enforcement (routers&rarr;services&rarr;repos)</li>
+                                <li>OWASP security review (SQL injection, hardcoded secrets, JWT)</li>
+                                <li>Performance anti-patterns (N+1 queries, missing pagination)</li>
+                                <li>Blast radius analysis (cross-stack impact, contract changes)</li>
+                                <li>TRD compliance verification (acceptance criteria met)</li>
+                                <li>Code quality (type hints, DRY, error handling)</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">import_linter</span>
+                                <span class="artifact">Bandit</span>
+                                <span class="artifact">Semgrep</span>
+                                <span class="artifact">Ruff + mypy</span>
+                            </div>
+                        </div>
+                        <div class="qa-loop">
+                            <span class="loop-icon">&#8634;</span>
+                            FAIL / NEEDS_CHANGES &rarr; CODE_REVIEW_FAIL back to Python_Dev_Lead
+                        </div>
+                        <div class="pipe-connector">
+                            <div class="pipe-line"></div>
+                            <div class="pipe-arrow"></div>
+                        </div>
+                        <div class="pipe-msg">CODE_REVIEW_PASS</div>
+                    </div>
+
+                    <div class="pipe-step">
+                        <div class="agent-card qa">
+                            <div class="agent-name">
+                                Python_QA
+                                <span class="agent-role">Validation</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li>pytest + pytest_asyncio &middot; httpx AsyncClient</li>
+                                <li>Schemathesis contract tests from OpenAPI spec</li>
+                                <li>85%+ code coverage target (pytest_cov)</li>
+                                <li>Locust load tests (&lt; 200ms p95, 100K concurrent)</li>
+                                <li>Bandit + Safety security scan</li>
+                                <li>mutmut mutation testing</li>
+                                <li>Real PostgreSQL (testcontainers, NOT mocks)</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">QA_REPORT</span>
+                                <span class="artifact">CI: ruff&rarr;mypy&rarr;pytest&rarr;schemathesis&rarr;bandit</span>
+                            </div>
+                        </div>
+
+                        <div class="qa-loop">
+                            <span class="loop-icon">&#8634;</span>
+                            FAIL &rarr; TASK_ASSIGN back to Python_Dev_Lead for fixes
+                        </div>
+                        <div class="pipe-connector">
+                            <div class="pipe-line"></div>
+                            <div class="pipe-arrow"></div>
+                        </div>
+                        <div class="pipe-msg">QA_REPORT (PASS)</div>
+                    </div>
+
+                    <div class="pipe-step">
+                        <div class="agent-card commit">
+                            <div class="agent-name">
+                                Python_Commit_Agent
+                                <span class="agent-role">Git Gate</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li><strong>Gate:</strong> Requires BOTH Code Review PASS + QA PASS</li>
+                                <li>Conventional Commits (commitizen enforcement)</li>
+                                <li>Pre-commit: ruff check + ruff format + mypy + pytest</li>
+                                <li>Feature branch management (trunk-based dev)</li>
+                                <li>Auto-versioning + CHANGELOG.md generation</li>
+                                <li>Alembic migration included check</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">pre-commit</span>
+                                <span class="artifact">commitizen</span>
+                                <span class="artifact">gh CLI</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="merged-output">
+                        <div class="label">COMMIT_APPROVED &rarr; Task reaches COMMITTED status</div>
+                    </div>
+                </div>
+
+                <!-- ── Frontend Column ───────────────────── -->
+                <div class="stack-column frontend-col">
+                    <h3><span class="dot" style="background:#9334e6; width:10px; height:10px; border-radius:50%; display:inline-block;"></span> Frontend Stack (Flutter + Dart)</h3>
+
+                    <div class="pipe-step">
+                        <div class="agent-card frontend">
+                            <div class="agent-name">
+                                Flutter_Requirement_Agent
+                                <span class="agent-role">Model Generator</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li>Auto-generate Dart models from contract.yaml</li>
+                                <li>openapi_generator_dart_dio (industry standard)</li>
+                                <li>Freezed + json_serializable (immutable models)</li>
+                                <li>Platform-specific tagging (iOS/Android/Web/Desktop)</li>
+                                <li>Widgetbook living UI component catalog</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">app/lib/core/api/</span>
+                                <span class="artifact">app/lib/features/*/data/models/</span>
+                                <span class="artifact">build_runner</span>
+                            </div>
+                        </div>
+                        <div class="pipe-connector">
+                            <div class="pipe-line"></div>
+                            <div class="pipe-arrow"></div>
+                        </div>
+                        <div class="pipe-msg">MODELS_GENERATED</div>
+                    </div>
+
+                    <div class="pipe-step">
+                        <div class="agent-card frontend">
+                            <div class="agent-name">
+                                Flutter_Dev_Lead
+                                <span class="agent-role">Implementation</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li>Riverpod 2.x state management</li>
+                                <li>go_router declarative navigation + deep links</li>
+                                <li>Dio + Retrofit HTTP client with JWT interceptor</li>
+                                <li>Drift SQLite + flutter_secure_storage</li>
+                                <li>GetIt + Injectable code-generated DI</li>
+                                <li>Material 3 design system + flutter_screenutil</li>
+                                <li>Clean Architecture (feature-first modules)</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">BLoC pattern</span>
+                                <span class="artifact">flutter_lints</span>
+                                <span class="artifact">melos</span>
+                            </div>
+                        </div>
+                        <div class="pipe-connector">
+                            <div class="pipe-line"></div>
+                            <div class="pipe-arrow"></div>
+                        </div>
+                        <div class="pipe-msg">TASK_COMPLETE</div>
+                    </div>
+
+                    <div class="pipe-step">
+                        <div class="agent-card code-review">
+                            <div class="agent-name">
+                                Flutter_Code_Review
+                                <span class="agent-role">Review Gate</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li>Clean Architecture boundary enforcement (data/domain/presentation)</li>
+                                <li>Mobile security (secure storage, no hardcoded keys, cert pinning)</li>
+                                <li>UI/UX review (WCAG 2.1 AA, Semantics, tap targets, RTL support)</li>
+                                <li>Performance anti-patterns (unnecessary rebuilds, missing const, dispose)</li>
+                                <li>Blast radius analysis (shared core impact, contract sync needed)</li>
+                                <li>TRD compliance (acceptance criteria, localization, wireframe match)</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">custom_lint</span>
+                                <span class="artifact">dart_code_metrics</span>
+                                <span class="artifact">dart_analyze</span>
+                            </div>
+                        </div>
+                        <div class="qa-loop">
+                            <span class="loop-icon">&#8634;</span>
+                            FAIL / NEEDS_CHANGES &rarr; CODE_REVIEW_FAIL back to Flutter_Dev_Lead
+                        </div>
+                        <div class="pipe-connector">
+                            <div class="pipe-line"></div>
+                            <div class="pipe-arrow"></div>
+                        </div>
+                        <div class="pipe-msg">CODE_REVIEW_PASS</div>
+                    </div>
+
+                    <div class="pipe-step">
+                        <div class="agent-card qa">
+                            <div class="agent-name">
+                                Flutter_QA
+                                <span class="agent-role">Validation</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li>flutter_test + mocktail (null-safe mocking)</li>
+                                <li>bloc_test for BLoC/Cubit testing</li>
+                                <li>Patrol E2E on real devices (LeanCode)</li>
+                                <li>alchemist golden / visual regression tests</li>
+                                <li>80%+ code coverage target (lcov + Codecov)</li>
+                                <li>dart_analyze + custom_lint static analysis</li>
+                                <li>Firebase Test Lab CI + BrowserStack</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">QA_REPORT</span>
+                                <span class="artifact">CI: lint&rarr;analyze&rarr;unit&rarr;widget&rarr;integration</span>
+                            </div>
+                        </div>
+
+                        <div class="qa-loop">
+                            <span class="loop-icon">&#8634;</span>
+                            FAIL &rarr; TASK_ASSIGN back to Flutter_Dev_Lead for fixes
+                        </div>
+                        <div class="pipe-connector">
+                            <div class="pipe-line"></div>
+                            <div class="pipe-arrow"></div>
+                        </div>
+                        <div class="pipe-msg">QA_REPORT (PASS)</div>
+                    </div>
+
+                    <div class="pipe-step">
+                        <div class="agent-card commit">
+                            <div class="agent-name">
+                                Flutter_Commit_Agent
+                                <span class="agent-role">Git Gate</span>
+                            </div>
+                            <ul class="agent-tasks">
+                                <li><strong>Gate:</strong> Requires BOTH Code Review PASS + QA PASS</li>
+                                <li>Conventional Commits (commitlint enforcement)</li>
+                                <li>Pre-commit: dart format + dart analyze + flutter test</li>
+                                <li>Feature branch management (trunk-based dev)</li>
+                                <li>cider / melos changelog generation</li>
+                                <li>Screenshots required for UI changes</li>
+                            </ul>
+                            <div class="agent-artifacts">
+                                <span class="artifact">git_hooks_dart</span>
+                                <span class="artifact">commitlint</span>
+                                <span class="artifact">gh CLI</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="merged-output">
+                        <div class="label">COMMIT_APPROVED &rarr; Task reaches COMMITTED status</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CROSS-STACK HANDSHAKE PROTOCOL
+         ═══════════════════════════════════════════════════════ -->
+    <div class="phase" id="phase-handshake">
+        <div class="phase-header" onclick="togglePhase('phase-handshake')">
+            <div class="phase-number" style="background:linear-gradient(135deg, #e8710a, #1a73e8, #9334e6)">&#8644;</div>
+            <div class="phase-title">Cross-Stack Handshake Protocol</div>
+            <div class="phase-desc">Backend contract change &rarr; Model regeneration &rarr; Frontend sync</div>
+            <div class="phase-toggle">&#9660;</div>
+        </div>
+        <div class="phase-body handshake-panel" style="background:linear-gradient(135deg, #1a1025 0%, #15102a 50%, #1a2535 100%); border-color:#352a55;">
+            <div class="handshake-flow">
+                <div class="hs-step" style="background:#2a1e0a; border:1px solid #e8710a55; color:#f5a623;">
+                    <strong>Python_Dev_Lead</strong><br>
+                    <small>Adds/modifies API endpoint</small>
+                </div>
+                <div class="hs-arrow">
+                    <div class="hs-label" style="color:#e8710a;">CONTRACT_UPDATE</div>
+                    <div class="hs-line" style="background:#e8710a;"></div>
+                </div>
+                <div class="hs-step" style="background:#2a1e0a; border:1px solid #e8710a55; color:#f5a623;">
+                    <strong>Python_Requirement_Agent</strong><br>
+                    <small>Updates contract.yaml</small>
+                </div>
+                <div class="hs-arrow">
+                    <div class="hs-label" style="color:#1a73e8;">HANDSHAKE_INIT</div>
+                    <div class="hs-line" style="background:#1a73e8;"></div>
+                </div>
+                <div class="hs-step" style="background:#0f1a2e; border:1px solid #1a73e855; color:#5a9cf5;">
+                    <strong>Master_Orchestrator</strong><br>
+                    <small>Spectral validate + openapi_diff</small>
+                </div>
+                <div class="hs-arrow">
+                    <div class="hs-label" style="color:#9334e6;">HANDSHAKE_INIT</div>
+                    <div class="hs-line" style="background:#9334e6;"></div>
+                </div>
+                <div class="hs-step" style="background:#1a0f2e; border:1px solid #9334e655; color:#bb7af7;">
+                    <strong>Flutter_Requirement_Agent</strong><br>
+                    <small>Re-gen Dart models + API clients</small>
+                </div>
+                <div class="hs-arrow">
+                    <div class="hs-label" style="color:#34a853;">HANDSHAKE_ACK</div>
+                    <div class="hs-line" style="background:#34a853;"></div>
+                </div>
+                <div class="hs-step" style="background:#0f1a2e; border:1px solid #1a73e855; color:#5a9cf5;">
+                    <strong>State Updated</strong><br>
+                    <small>consumed_by_flutter = true</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="connector">
+        <div class="line"></div>
+        <span class="msg-label">Both stacks merged</span>
+        <div class="arrow"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         PHASE 6 — SPRINT COMPLETION
+         ═══════════════════════════════════════════════════════ -->
+    <div class="phase" id="phase-6">
+        <div class="phase-header" onclick="togglePhase('phase-6')">
+            <div class="phase-number" style="background:#34a853">6</div>
+            <div class="phase-title">Sprint Completion & Next Cycle</div>
+            <div class="phase-desc">State update &rarr; Loop to next sprint or Release</div>
+            <div class="phase-toggle">&#9660;</div>
+        </div>
+        <div class="phase-body">
+            <div class="agent-card orchestrator">
+                <div class="agent-name">
+                    Master_Orchestrator
+                    <span class="agent-role">Sprint Review</span>
+                </div>
+                <ul class="agent-tasks">
+                    <li>Verify ALL sub-tasks reached COMMITTED status (4 gates passed)</li>
+                    <li>Reject sprint completion if any task stuck at DEV_COMPLETE, CODE_REVIEW_PASS, or QA_PASS</li>
+                    <li>Update global_state.json (sprint progress, qa_gates, pipeline_stats)</li>
+                    <li>Record agent_cycle_log entry</li>
+                    <li>Update qa_gates metrics (pass_count, fail_count, review_count)</li>
+                </ul>
+            </div>
+
+            <div class="decision-node">
+                <div class="diamond">More sprints remaining?</div>
+            </div>
+            <div class="decision-paths">
+                <span class="path-label yes">Yes &rarr; Loop back to Task_Breaking_Agent (Phase 3)</span>
+                <span class="path-label no" style="background:#1a3320; color:#5cb870; border-color:#2a5535;">No &rarr; Release v{semver}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CONTINUOUS PROCESSES
+         ═══════════════════════════════════════════════════════ -->
+    <div style="margin-top:32px;">
+        <h2 style="font-size:18px; color:#889; margin-bottom:16px; font-weight:600;">Continuous Processes (Always Running)</h2>
+        <div class="continuous-grid">
+            <!-- Progress Monitor -->
+            <div class="continuous-panel">
+                <h3><span class="pulse"></span> Progress_Monitor</h3>
+                <div class="agent-card monitor">
+                    <div class="agent-name">
+                        Progress_Monitor
+                        <span class="agent-role">Observability</span>
+                    </div>
+                    <ul class="agent-tasks">
+                        <li>Sprint velocity tracking (rolling avg, last 3 sprints)</li>
+                        <li>Burndown / burnup chart generation</li>
+                        <li>Blocker detection: 2 days &rarr; warning, 3 days &rarr; escalation</li>
+                        <li>Daily standup auto-summaries via Claude API</li>
+                        <li>Earned value management metrics</li>
+                        <li>QA pass rate, avg task cycle time, cross-stack sync count</li>
+                    </ul>
+                    <div class="agent-artifacts">
+                        <span class="artifact">Prometheus/Grafana</span>
+                        <span class="artifact">Pandas/DuckDB</span>
+                        <span class="artifact">Apache ECharts</span>
+                    </div>
+                </div>
+                <div class="qa-loop" style="background:rgba(249,171,0,0.08); border-color:#f9ab0055; color:#f9d271;">
+                    <span class="loop-icon">&#9888;</span>
+                    Task stuck &gt; 3 days &rarr; ESCALATE to Master_Orchestrator &rarr; Reassign or unblock
+                </div>
+                <div style="margin-top:12px; font-size:11px; color:#556;">
+                    <strong>Listens to:</strong> STATE_UPDATE, QA_REPORT (from both stacks)
+                </div>
+            </div>
+
+            <!-- Continuity Agent -->
+            <div class="continuous-panel">
+                <h3><span class="pulse"></span> Continuity_Agent</h3>
+                <div class="agent-card monitor">
+                    <div class="agent-name">
+                        Continuity_Agent
+                        <span class="agent-role">Memory &amp; Context</span>
+                    </div>
+                    <ul class="agent-tasks">
+                        <li>3-tier memory: working (&lt; 1hr), short_term (1-2 wk), long_term (permanent)</li>
+                        <li>Semantic search via Qdrant / ChromaDB vector DB</li>
+                        <li>Architecture Decision Records (ADRs) in Git + Markdown</li>
+                        <li>Session handoff protocol for cross-session continuity</li>
+                        <li>Entity state tracking (models, endpoints, widgets, DB tables)</li>
+                        <li>Progressive context summarization for LLM context windows</li>
+                    </ul>
+                    <div class="agent-artifacts">
+                        <span class="artifact">LangGraph Checkpointer</span>
+                        <span class="artifact">Qdrant</span>
+                        <span class="artifact">LangMem</span>
+                    </div>
+                </div>
+                <div style="margin-top:12px; font-size:11px; color:#556;">
+                    <strong>Listens to:</strong> All events from Master_Orchestrator<br>
+                    <strong>Provides:</strong> Session context resumption to all agents
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SCOPE CHANGE HANDLING
+         ═══════════════════════════════════════════════════════ -->
+    <div class="phase" id="phase-scope" style="margin-top:24px;">
+        <div class="phase-header" onclick="togglePhase('phase-scope')">
+            <div class="phase-number" style="background:#d93025">&#8635;</div>
+            <div class="phase-title">Scope Change Handling</div>
+            <div class="phase-desc">PRD_UPDATED &rarr; Impact analysis &rarr; Re-plan &rarr; Reassign</div>
+            <div class="phase-toggle">&#9660;</div>
+        </div>
+        <div class="phase-body scope-panel" style="background:#1a1520;">
+            <div class="scope-flow">
+                <div class="scope-step" style="border-color:#d9302555; color:#f56b62;">
+                    <strong>PRD_UPDATED</strong> or<br><strong>SCOPE_CHANGE_DETECTED</strong>
+                </div>
+                <div class="scope-arrow">&rarr;</div>
+                <div class="scope-step">
+                    <strong>Root_Requirement_Agent</strong><br>
+                    Impact analysis + RTM update
+                </div>
+                <div class="scope-arrow">&rarr;</div>
+                <div class="scope-step">
+                    <strong>Task_Breaking_Agent</strong><br>
+                    Re-plan affected tasks + update sprint sequence
+                </div>
+                <div class="scope-arrow">&rarr;</div>
+                <div class="scope-step">
+                    <strong>Master_Orchestrator</strong><br>
+                    Reassign tasks + notify Progress_Monitor
+                </div>
+                <div class="scope-arrow">&rarr;</div>
+                <div class="scope-step" style="border-color:#1a73e855; color:#5a9cf5;">
+                    Re-enter Phase 4<br>(Task Assignment)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         LEGEND
+         ═══════════════════════════════════════════════════════ -->
+    <div class="legend">
+        <h3>Message Types &amp; Communication Legend</h3>
+        <div class="legend-grid">
+            <div class="legend-item">
+                <div class="legend-line solid"></div>
+                Solid arrow &mdash; Primary sequential flow
+            </div>
+            <div class="legend-item">
+                <div class="legend-line dashed"></div>
+                Dashed arrow &mdash; Async / continuous event
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#1a73e8;"></div>
+                Orchestration agent (6 agents)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#e8710a;"></div>
+                Backend agent (5 agents)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#9334e6;"></div>
+                Frontend agent (5 agents)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#e37400;"></div>
+                Code Review agent (2 agents)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#d93025;"></div>
+                QA agent (2 agents)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#188038;"></div>
+                Commit agent (2 agents)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#5f6368;"></div>
+                Monitor / Continuity (2 agents)
+            </div>
+        </div>
+
+        <h3 style="margin-top:16px;">All 28 Message Types</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+            <span class="artifact">PRD_INGESTED</span>
+            <span class="artifact">PRD_ANALYSIS_COMPLETE</span>
+            <span class="artifact">PRD_GAP_DETECTED</span>
+            <span class="artifact">PRD_UPDATED</span>
+            <span class="artifact">FEATURE_EXTRACTED</span>
+            <span class="artifact">REQUIREMENT_APPROVED</span>
+            <span class="artifact">REQUIREMENT_REJECTED</span>
+            <span class="artifact">REQUIREMENT_UPDATED</span>
+            <span class="artifact">CLARIFICATION_NEEDED</span>
+            <span class="artifact">TRACEABILITY_UPDATE</span>
+            <span class="artifact">TASKS_GENERATED</span>
+            <span class="artifact">SPRINT_PLAN_READY</span>
+            <span class="artifact">SCOPE_CHANGE_DETECTED</span>
+            <span class="artifact">TASK_ASSIGN</span>
+            <span class="artifact">TASK_COMPLETE</span>
+            <span class="artifact">TASK_FAILED</span>
+            <span class="artifact" style="background:rgba(227,116,0,0.15); color:#f5c542; border-color:rgba(227,116,0,0.3);">CODE_REVIEW_PASS</span>
+            <span class="artifact" style="background:rgba(227,116,0,0.15); color:#f5c542; border-color:rgba(227,116,0,0.3);">CODE_REVIEW_FAIL</span>
+            <span class="artifact">SYNC_REQUEST</span>
+            <span class="artifact">SYNC_ACK</span>
+            <span class="artifact">QA_REPORT</span>
+            <span class="artifact">CONTRACT_UPDATE</span>
+            <span class="artifact">CONTRACT_VALIDATED</span>
+            <span class="artifact">COMMIT_REQUEST</span>
+            <span class="artifact">COMMIT_APPROVED</span>
+            <span class="artifact">COMMIT_REJECTED</span>
+            <span class="artifact">HANDSHAKE_INIT</span>
+            <span class="artifact">HANDSHAKE_ACK</span>
+            <span class="artifact">STATE_UPDATE</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function togglePhase(id) {
+        document.getElementById(id).classList.toggle('collapsed');
+    }
+
+    function expandAll() {
+        document.querySelectorAll('.phase').forEach(p => p.classList.remove('collapsed'));
+    }
+
+    function collapseAll() {
+        document.querySelectorAll('.phase').forEach(p => p.classList.add('collapsed'));
+    }
+
+    function highlightFlow(mode) {
+        // Reset all buttons
+        document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+
+        // Reset visibility
+        document.querySelectorAll('.phase').forEach(p => {
+            p.style.opacity = '1';
+            p.classList.remove('collapsed');
+        });
+
+        if (mode === 'primary') {
+            document.getElementById('btn-primary').classList.add('active');
+            ['phase-handshake', 'phase-scope'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.opacity = '0.3';
+            });
+        } else if (mode === 'handshake') {
+            document.getElementById('btn-handshake').classList.add('active');
+            ['phase-1', 'phase-2', 'phase-3', 'phase-6', 'phase-scope'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.opacity = '0.3';
+            });
+        } else if (mode === 'scope') {
+            document.getElementById('btn-scope').classList.add('active');
+            ['phase-1', 'phase-2', 'phase-3', 'phase-5', 'phase-6', 'phase-handshake'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.opacity = '0.3';
+            });
+        } else {
+            document.getElementById('btn-all').classList.add('active');
+        }
+    }
+</script>
+
+</body>
+</html>

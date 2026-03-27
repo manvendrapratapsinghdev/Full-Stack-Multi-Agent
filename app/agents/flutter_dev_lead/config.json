@@ -1,0 +1,110 @@
+{
+  "agent_id": "Flutter_Dev_Lead",
+  "role": "Implement Flutter features per App_TRD using best-in-class packages and patterns",
+  "upstream": ["Flutter_Requirement_Agent", "Master_Orchestrator"],
+  "downstream": ["Flutter_QA"],
+  "skill_set": {
+    "state_management": {
+      "description": "Type-safe, compile-time checked, testable state management",
+      "tools": {
+        "Riverpod_2x": "Community consensus winner 2025-2026 — type-safe, compile-time checked, testable",
+        "flutter_bloc": "Alternative — event-driven, well-documented, large ecosystem",
+        "flutter_riverpod": "Flutter bindings for Riverpod"
+      },
+      "pattern": "AsyncNotifier / StateNotifier for complex state, Cubit for simple toggles"
+    },
+    "navigation": {
+      "description": "Declarative routing with deep-link support",
+      "tools": {
+        "go_router": "Official Flutter team recommendation — declarative, deep-link support, type-safe routes"
+      }
+    },
+    "networking": {
+      "description": "HTTP client with auth, logging, retry interceptors",
+      "tools": {
+        "Dio": "HTTP client with interceptors (auth token attach, 401 refresh, logging, retry)",
+        "Retrofit": "Type-safe API calls generated from OpenAPI spec, works with Dio"
+      }
+    },
+    "local_storage": {
+      "description": "Persistent data storage",
+      "tools": {
+        "Drift": "Type-safe SQLite with reactive queries for complex local data",
+        "shared_preferences": "Simple key-value storage",
+        "flutter_secure_storage": "Encrypted storage for JWT tokens and secrets"
+      }
+    },
+    "dependency_injection": {
+      "description": "Service locator with code-generated registration",
+      "tools": {
+        "get_it": "Service locator pattern",
+        "injectable": "Code-generated DI registration via build_runner"
+      }
+    },
+    "code_generation": {
+      "description": "Immutable models, JSON serialization, union types",
+      "tools": {
+        "build_runner": "Dart code generation engine",
+        "Freezed": "Immutable data classes with copyWith, equality, union types",
+        "json_serializable": "JSON serialization/deserialization code generation"
+      },
+      "note": "Non-negotiable in 2025-2026 Flutter development"
+    },
+    "architecture": {
+      "description": "Scalable, testable project structure",
+      "pattern": "Clean Architecture (feature-first): lib/features/{feature}/data|domain|presentation",
+      "tools": {
+        "very_good_cli": "Production-grade Flutter project scaffolding by Very Good Ventures"
+      },
+      "layers": {
+        "data": "Repositories, data sources, API models",
+        "domain": "Entities, use cases, repository interfaces",
+        "presentation": "BLoC/Riverpod, screens, widgets"
+      }
+    },
+    "ui_components": {
+      "description": "Design system and responsive layout",
+      "tools": {
+        "Material_3": "Default Material Design 3 components",
+        "flutter_screenutil": "Responsive sizing across screen sizes",
+        "cached_network_image": "Image caching with placeholder/error widgets"
+      }
+    },
+    "code_quality": {
+      "description": "Enforce coding standards and architecture rules",
+      "tools": {
+        "flutter_lints": "Official Flutter lint rules",
+        "custom_lint": "Custom lint rules to enforce architecture boundaries",
+        "dart_code_metrics": "Code complexity and maintainability metrics"
+      }
+    },
+    "image_handling": {
+      "description": "Camera/gallery image capture and upload",
+      "tools": {
+        "image_picker": "Photo capture and gallery selection",
+        "image_cropper": "Image cropping before upload"
+      }
+    },
+    "monorepo_management": {
+      "description": "Multi-package Flutter project management",
+      "tools": {
+        "melos": "Monorepo management for Dart/Flutter — versioning, changelogs, coordinated builds"
+      }
+    },
+    "environment_config": {
+      "description": "Dev/staging/prod environment configuration",
+      "tools": {
+        "flutter_flavorizr": "Flavor/environment configuration automation"
+      }
+    }
+  },
+  "listens_to": ["TASK_ASSIGN", "MODELS_GENERATED"],
+  "emits": ["TASK_COMPLETE", "TASK_FAILED"],
+  "architecture_decisions": {
+    "state_management": "BLoC pattern (flutter_bloc) — chosen for event-driven traceability",
+    "architecture": "Clean Architecture — data/domain/presentation per feature",
+    "http_client": "Dio with JWT interceptor",
+    "navigation": "GoRouter",
+    "di": "GetIt + Injectable"
+  }
+}

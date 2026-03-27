@@ -1,0 +1,88 @@
+{
+  "agent_id": "Master_Orchestrator",
+  "role": "Principal coordinator and cross-stack integrator",
+  "protocol": "async_handshake",
+  "pipeline_rule": {
+    "description": "MANDATORY per-task pipeline. A task is INCOMPLETE until ALL 4 stages pass sequentially. No stage can be skipped.",
+    "enforced_flow": [
+      { "stage": 1, "agent_role": "Dev_Lead", "trigger": "TASK_ASSIGN", "completion": "TASK_COMPLETE", "next_on_success": "Code_Review" },
+      { "stage": 2, "agent_role": "Code_Review", "trigger": "TASK_COMPLETE", "completion": "CODE_REVIEW_PASS", "next_on_success": "QA", "on_fail": "Return to Dev_Lead with CODE_REVIEW_FAIL issues" },
+      { "stage": 3, "agent_role": "QA", "trigger": "CODE_REVIEW_PASS", "completion": "QA_REPORT (result=PASS)", "next_on_success": "Commit_Agent", "on_fail": "Return to Dev_Lead with QA_REPORT issues" },
+      { "stage": 4, "agent_role": "Commit_Agent", "trigger": "QA_REPORT (result=PASS)", "completion": "COMMIT_APPROVED", "on_fail": "Return to Dev_Lead with COMMIT_REJECTED reason" }
+    ],
+    "task_status_machine": {
+      "ASSIGNED": "Dev working on task",
+      "DEV_COMPLETE": "Dev done, awaiting code review",
+      "CODE_REVIEW_PASS": "Review passed, awaiting QA",
+      "CODE_REVIEW_FAIL": "Review failed, returned to Dev",
+      "QA_PASS": "QA passed, awaiting commit",
+      "QA_FAIL": "QA failed, returned to Dev",
+      "COMMITTED": "All gates passed, task finalized"
+    },
+    "sprint_completion_rule": "A sprint is COMPLETE only when ALL its sub-tasks reach COMMITTED status",
+    "violation_handling": "If any agent attempts to skip a stage, Master_Orchestrator REJECTS the action and logs a PIPELINE_VIOLATION"
+  },
+  "skill_set": {
+    "multi_agent_orchestration": {
+      "description": "Stateful coordination of all 15 agents with persistence and checkpointing",
+      "tools": {
+        "LangGraph": "Leading framework for stateful multi-agent orchestration with built-in persistence, checkpointing, human-in-the-loop",
+        "CrewAI": "Alternative — role-based agent definition, delegation, sequential/parallel execution",
+        "Temporal_io": "Durable workflow orchestration with retry logic, saga patterns for long-running processes"
+      },
+      "pattern": "Supervisor pattern — delegates to specialists, collects results, resolves conflicts"
+    },
+    "state_management": {
+      "description": "Global project state tracking across all agents and sprints",
+      "tools": {
+        "PostgreSQL_SQLModel": "Persistent orchestration state (which agent doing what, sprint state, blockers)",
+        "Redis_Valkey": "Real-time shared state, message passing, pub/sub between agents",
+        "LangGraph_Checkpointer": "SQLite/PostgreSQL-backed state persistence for agent conversations"
+      }
+    },
+    "cross_stack_integration": {
+      "description": "Manage the async handshake protocol between backend and frontend",
+      "tools": {
+        "openapi_diff": "Detect contract changes that trigger handshake",
+        "Spectral": "Validate OpenAPI spec quality before approving contract changes"
+      },
+      "handshake_steps": [
+        "Python_Dev_Lead updates contract.yaml",
+        "Master validates contract (Spectral lint + openapi-diff)",
+        "HANDSHAKE_INIT → Flutter_Requirement_Agent",
+        "Flutter_Requirement_Agent updates data models",
+        "HANDSHAKE_ACK → Master updates global_state.json"
+      ]
+    },
+    "event_driven_coordination": {
+      "description": "Agent communication via events, not direct calls",
+      "tools": {
+        "Redis_PubSub": "Real-time event distribution between agents",
+        "WebSocket_SSE": "Real-time status updates to monitoring dashboard"
+      },
+      "pattern": "Event-driven architecture with circuit breaker for agent failures"
+    },
+    "conflict_resolution": {
+      "description": "Resolve conflicts when agents disagree or produce incompatible outputs",
+      "method": "Escalation ladder: auto-resolve → human-in-the-loop → rollback"
+    },
+    "parallel_execution": {
+      "description": "Run independent agent tasks concurrently",
+      "tools": {
+        "LangGraph": "Parallel node execution within agent graph",
+        "asyncio": "Python async for concurrent agent dispatch"
+      }
+    }
+  },
+  "listens_to": [
+    "TASK_COMPLETE", "CODE_REVIEW_PASS", "CODE_REVIEW_FAIL",
+    "QA_REPORT", "COMMIT_APPROVED", "COMMIT_REJECTED",
+    "CONTRACT_UPDATE", "SYNC_REQUEST",
+    "PRD_ANALYSIS_COMPLETE", "REQUIREMENT_APPROVED", "TASKS_GENERATED",
+    "SPRINT_PLAN_READY", "SCOPE_CHANGE_DETECTED", "PIPELINE_VIOLATION"
+  ],
+  "emits": [
+    "TASK_ASSIGN", "CONTRACT_VALIDATED", "HANDSHAKE_INIT", "STATE_UPDATE",
+    "PIPELINE_VIOLATION", "TASK_RETURNED"
+  ]
+}

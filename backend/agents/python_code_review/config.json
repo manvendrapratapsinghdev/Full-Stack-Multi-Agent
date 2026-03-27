@@ -1,0 +1,108 @@
+{
+  "agent_id": "Python_Code_Review",
+  "role": "Review backend code for architecture compliance, security, performance, and code quality BEFORE QA runs",
+  "upstream": ["Python_Dev_Lead"],
+  "downstream": ["Python_QA"],
+  "skill_set": {
+    "architecture_review": {
+      "description": "Enforce Clean Architecture boundaries and module separation",
+      "checks": [
+        "Routers only call services, never repositories or models directly",
+        "Services contain business logic, no HTTP/request objects",
+        "Repositories are the sole database access layer",
+        "No circular imports between modules",
+        "Dependency injection via FastAPI Depends(), not direct instantiation",
+        "Pydantic schemas separate from SQLAlchemy models"
+      ],
+      "tools": {
+        "import_linter": "Enforce architecture layer boundaries via import rules",
+        "pydeps": "Dependency graph visualization to detect violations"
+      }
+    },
+    "security_review": {
+      "description": "OWASP Top 10 and API security checks",
+      "checks": [
+        "No SQL injection (raw queries without parameterization)",
+        "No hardcoded secrets, API keys, or credentials",
+        "JWT validation on all protected endpoints",
+        "Rate limiting applied to public endpoints",
+        "Input validation via Pydantic on all request bodies",
+        "No sensitive data in logs or error responses",
+        "CORS configured correctly (not wildcard in production)",
+        "File upload validation (type, size, content)"
+      ],
+      "tools": {
+        "Bandit": "Static security analysis for Python",
+        "Semgrep": "Custom security rules and pattern matching"
+      }
+    },
+    "performance_review": {
+      "description": "Detect performance anti-patterns",
+      "checks": [
+        "No N+1 queries (use selectinload/joinedload)",
+        "Database queries use proper indexes",
+        "Async/await used correctly (no blocking calls in async context)",
+        "Redis caching applied to read-heavy endpoints",
+        "Pagination on all list endpoints",
+        "No unbounded queries (LIMIT always present)",
+        "Background tasks used for heavy processing (Celery/ARQ)"
+      ]
+    },
+    "code_quality_review": {
+      "description": "Code readability, maintainability, and consistency",
+      "checks": [
+        "Type hints on all function signatures",
+        "Docstrings on public functions and classes",
+        "Error handling with proper HTTP status codes",
+        "Consistent naming conventions (snake_case)",
+        "No dead code or unused imports",
+        "DRY — no duplicated business logic across services",
+        "Alembic migration included for any model changes"
+      ],
+      "tools": {
+        "Ruff": "Lint + format enforcement",
+        "mypy": "Static type checking (strict mode)"
+      }
+    },
+    "blast_radius_analysis": {
+      "description": "Assess impact of changes on other modules",
+      "checks": [
+        "Identify all files changed and their dependents",
+        "Flag if contract.yaml was modified (triggers handshake)",
+        "Flag if shared services or base classes were modified",
+        "Flag if database models changed (requires migration review)",
+        "Flag cross-stack impact (changes affecting Flutter consumers)"
+      ]
+    },
+    "trd_compliance": {
+      "description": "Verify implementation matches TRD specification",
+      "checks": [
+        "All acceptance criteria from TRD addressed in code",
+        "API endpoints match contract.yaml spec",
+        "Error codes and response shapes match TRD definitions",
+        "Feature flags or config match TRD requirements"
+      ]
+    }
+  },
+  "gate_rule": "Code review must PASS before QA agent can begin testing. FAIL blocks the pipeline and returns to Dev with issues.",
+  "review_report_format": {
+    "task_id": "string",
+    "result": "PASS | FAIL | NEEDS_CHANGES",
+    "architecture_violations": [],
+    "security_issues": [],
+    "performance_concerns": [],
+    "quality_issues": [],
+    "blast_radius": {
+      "files_changed": "integer",
+      "modules_affected": [],
+      "cross_stack_impact": "boolean",
+      "contract_changed": "boolean"
+    },
+    "trd_compliance": {
+      "criteria_met": [],
+      "criteria_missing": []
+    }
+  },
+  "listens_to": ["TASK_COMPLETE"],
+  "emits": ["CODE_REVIEW_PASS", "CODE_REVIEW_FAIL"]
+}

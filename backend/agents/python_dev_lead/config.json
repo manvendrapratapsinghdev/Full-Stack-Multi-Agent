@@ -1,0 +1,107 @@
+{
+  "agent_id": "Python_Dev_Lead",
+  "role": "Implement FastAPI backend per Backend_TRD using best-in-class Python tooling",
+  "upstream": ["Python_Requirement_Agent", "Master_Orchestrator"],
+  "downstream": ["Python_QA"],
+  "skill_set": {
+    "api_framework": {
+      "description": "Async, type-safe, auto-documenting API framework",
+      "tools": {
+        "FastAPI_0_110_plus": "Best Python API framework 2025-2026 — async, type-safe, auto-docs, OpenAPI generation"
+      }
+    },
+    "orm_and_database": {
+      "description": "Type-safe database access with migration support",
+      "tools": {
+        "SQLAlchemy_2_0": "New typed query style, async support via asyncpg",
+        "SQLModel": "Alternative — combines SQLAlchemy + Pydantic (by FastAPI creator), simpler for CRUD",
+        "Alembic": "The only serious choice for SQLAlchemy migrations — auto-generate from models",
+        "asyncpg": "Async PostgreSQL driver for maximum performance"
+      }
+    },
+    "validation_and_serialization": {
+      "description": "Request/response/config modeling",
+      "tools": {
+        "Pydantic_v2": "Core of FastAPI — all modeling, 5-50x faster than v1",
+        "pydantic_settings": "Environment variable management with type validation"
+      }
+    },
+    "authentication": {
+      "description": "Production-grade auth system",
+      "tools": {
+        "FastAPI_Users": "Production-grade auth with JWT, OAuth2, password hashing",
+        "python_jose": "JWT token creation and verification",
+        "passlib_bcrypt": "Password hashing"
+      }
+    },
+    "task_queue": {
+      "description": "Background task processing (AI pipeline, notifications)",
+      "tools": {
+        "Celery_Redis": "Complex workflow orchestration, retries, scheduling",
+        "ARQ": "Lightweight async task queue alternative (simpler, fewer dependencies)"
+      }
+    },
+    "caching": {
+      "description": "Response caching and session storage",
+      "tools": {
+        "Redis": "Primary cache, session store, rate limiting backend",
+        "fastapi_cache2": "Decorator-based response caching for FastAPI"
+      }
+    },
+    "logging_and_observability": {
+      "description": "Structured logging and monitoring",
+      "tools": {
+        "structlog": "Structured logging with JSON output, processor pipeline — production-grade",
+        "Prometheus_client": "Expose metrics for Grafana dashboards",
+        "opentelemetry": "Distributed tracing across services"
+      }
+    },
+    "code_quality": {
+      "description": "Linting, formatting, type checking",
+      "tools": {
+        "Ruff": "Replaces flake8, isort, black, pyupgrade — blazingly fast, single tool (by Astral)",
+        "mypy": "Static type checking for Python"
+      }
+    },
+    "dependency_management": {
+      "description": "Fast, reproducible dependency resolution",
+      "tools": {
+        "uv": "10-100x faster than pip — the new standard (2025-2026) by Astral (Ruff creators)",
+        "uv_lock": "Reproducible dependency locking committed to Git"
+      }
+    },
+    "cloud_deployment": {
+      "description": "Cloud-native deployment and infrastructure",
+      "tools": {
+        "Docker": "Containerization with multi-stage builds",
+        "Cloud_Build": "CI/CD pipeline for GCP",
+        "Cloud_Run": "Serverless container deployment",
+        "Skaffold": "Local Kubernetes development",
+        "Minikube": "Local K8s cluster for testing"
+      },
+      "artifacts": ["cloudbuild.yaml", "Dockerfile", "deployment.yaml", "docker-compose.yaml"]
+    },
+    "ai_service_integration": {
+      "description": "AI/ML service integration for content processing",
+      "tools": {
+        "Cloud_NLP_API": "Language detection, entity recognition",
+        "Claude_API_or_GPT4o": "Text rephrasing, content analysis",
+        "Cloud_Vision_API": "Image content safety scanning",
+        "pgvector": "PostgreSQL vector extension for duplicate detection via embeddings"
+      }
+    },
+    "middleware": {
+      "description": "Cross-cutting API concerns",
+      "tools": {
+        "slowapi": "Rate limiting middleware for FastAPI (based on limits)",
+        "starlette_middleware": "CORS, trusted hosts, GZip compression"
+      }
+    },
+    "architecture": {
+      "pattern": "Clean Architecture / Hexagonal: routers → services → repositories → models",
+      "method": "Async-first, Dependency Injection via FastAPI Depends(), Repository pattern"
+    }
+  },
+  "listens_to": ["TASK_ASSIGN", "CONTRACT_VALIDATED"],
+  "emits": ["TASK_COMPLETE", "TASK_FAILED", "CONTRACT_UPDATE"]
+}
